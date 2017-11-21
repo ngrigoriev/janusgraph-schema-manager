@@ -1,0 +1,109 @@
+{
+	"graph": {
+		"name": "Graph Of The Gods - God Identities schema",
+		"model_version": "1.0",
+		"schema_format_version": "1.0",
+		"defaults": {
+			"vertex_partition": false,
+			"edge_partition": false,
+			"consistency_modifier": "DEFAULT"
+		}
+	},
+	"vertices": [
+		{
+			"label": "God",
+			"description": "A simple god",
+			"doctags": "core, ids"
+		},
+		{
+			"label": "Monster",
+			"description": "A typical monster",
+			"doctags": "core, ids"
+		},
+		{
+			"label": "DemiGod",
+			"description": "A minor deity, a mortal or immortal who is the offspring of a god and a human being, or a figure who has attained divine status after death",
+			"doctags": "core, ids"
+		},
+		{
+			"label": "Titan",
+			"description": "A member of the second generation of divine beings, descending from the primordial deities and preceding the Olympian deities",
+			"doctags": "core, ids"
+		},
+		{
+			"label": "Location",
+			"description": "A location",
+			"doctags": "core, ids, geo"
+		},
+		{
+			"label": "Human",
+			"description": "General representative of the Earth population",
+			"doctags": "core, ids, mortals"
+		}
+	],
+	"edges": [
+		{
+			"label": "PET",
+			"description": "Points to a pet",
+			"multiplicity": "MULTI",
+			"doctags": "core, ids"
+		},
+		{
+			"label": "LIVES",
+			"description": "Points to the place where this entity lives",
+			"multiplicity": "MANY2ONE",
+			"doctags": "core, ids"
+		},
+		{
+			"label": "BROTHER",
+			"description": "Brother of",
+			"multiplicity": "MULTI",
+			"doctags": "core, ids, family"
+		},
+		{
+			"label": "FATHER",
+			"description": "Points to the father",
+			"multiplicity": "MANY2ONE",
+			"doctags": "core, ids, family"
+		},
+		{
+			"label": "MOTHER",
+			"description": "Points to the mother",
+			"multiplicity": "MANY2ONE",
+			"doctags": "core, ids, family"
+		}
+	],
+	"properties": [
+		{
+			"key": "name",
+			"cardinality": "SINGLE",
+			"data_type": "java.lang.String",
+			"description": "Name of an entity or a place",
+			"doctags": "core, ids"
+		},
+		{
+			"key": "time",
+			"cardinality": "SINGLE",
+			"data_type": "java.lang.Long",
+			"description": "Date/time when this edge or vertex was updated. Expressed as numeric point, has nothing to do with UTC time.",
+			"doctags": "core"
+		}
+	],
+	"graph_indexes": [
+		{
+			"name": "godsByName",
+			"rel_type": "vertex",
+			"keys": [
+				{ "key": "name" }
+			],
+			"unique": true,
+			"index_only": "God",
+			"index_type": "composite"
+
+		}
+	],
+	"local_property_indexes": [
+	],
+	"local_edge_indexes": [
+	]
+}

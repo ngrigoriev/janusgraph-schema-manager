@@ -1,0 +1,732 @@
+{
+	"$schema": "http://json-schema.org/schema#",
+	"title": "JanusGraph Graph Schema Definition",
+	"javaType": "com.newforma.titan.schema.types.GraphSchemaDef",
+	"title": "Titan Graph schema definition",
+	"description": "Defines a set of vertices, edges, properties and indexes for JanusGraph. The schema definition has 3 purposes: to be used for populating the actual graph elements, for generating the documentation about the graph schema and to serve as source of metadata at runtime.",
+	"definitions": {
+		"GraphMeta": {
+			"type": "object",
+			"javaType": "com.newforma.titan.schema.types.GraphMeta",
+			"title": "Global graph metadata",
+			"description": "This object defines some global parameters and defaults used to populate the graph schema",
+			"properties": {
+				"name": {
+					"type": "string",
+					"minLength": 4,
+					"description": "The name of this graph"
+				},
+				"model_version": {
+					"type": "string",
+					"pattern": "^([0-9]+\\.)+[0-9]+$",
+					"description": "The version of this model"
+				},
+				"schema_format_version": {
+					"type": "string",
+					"pattern": "^([0-9]+\\.)+[0-9]+$",
+					"description": "The version of this schema format. Must be supported by the schema manager build."
+				},
+				"defaults": {
+					"$ref": "#/definitions/GraphMetaDefaults"
+				},
+				"conventions": {
+					"$ref": "#/definitions/GraphNamingConventions"
+				},
+				"indexing": {
+					"$ref": "#/definitions/GraphIndexingDefaults"
+				},
+				"documentation": {
+					"$ref": "#/definitions/GraphDocumentationSettings"
+				}
+			},
+			"required": ["name", "model_version", "defaults"],
+			"additionalProperties": false
+		},
+		"GraphMetaDefaults": {
+			"type": "object",
+			"javaType": "com.newforma.titan.schema.types.GraphMetaDefaults",
+			"title": "Graph defaults",
+			"description": "Set of values used as defaults when populating the schema",
+			"properties": {
+				"vertex_partition": {
+					"type": "boolean",
+					"description": "See http://docs.janusgraph.org/latest/graph-partitioning.html"
+				},
+				"edge_partition": {
+					"type": "boolean",
+					"description": "See http://docs.janusgraph.org/latest/graph-partitioning.html"
+				},
+				"consistency_modifier": {
+					"type": "string",
+					"enum": ["DEFAULT", "LOCK", "FORK"],
+					"javaType": "org.janusgraph.core.schema.ConsistencyModifier",
+					"description": "Default consistency modifier, see http://docs.janusgraph.org/latest/eventual-consistency.html"
+				}
+			},
+			"required": ["vertex_partition", "edge_partition", "consistency_modifier"],
+			"additionalProperties": false
+		},
+		"GraphIndexingDefaults": {
+			"type": "object",
+			"javaType": "com.newforma.titan.schema.types.GraphIndexingDefaults",
+			"title": "Graph indexing defaults",
+			"description": "Configures the defaults for graph indexing",
+			"properties": {
+				"default_indexing_backend": {
+					"type": "string",
+					"minLength": 1,
+					"description": "The name of default indexing backend, will be used for the mixed indexes having no indexing backend name provided"
+				}
+			},
+			"additionalProperties": false
+		},
+		"VertexLabel": {
+			"type": "object",
+			"javaType": "com.newforma.titan.schema.types.SchemaVertexLabel",
+			"javaInterfaces": ["com.newforma.titan.schema.types.IDocTaggable"],
+			"title": "Graph vertex definition",
+			"description": "Defines a vertex in the graph",
+			"properties": {
+				"label": {
+					"type": "string",
+					"description": "Vertex label, see http://docs.janusgraph.org/latest/schema.html#_defining_vertex_labels"
+				},
+				"description": {
+					"type": "string",
+					"description": "Human-readable description of this vertex type"
+				},
+				"partition": {
+					"type": "boolean",
+					"default": false,
+					"description": "See http://docs.janusgraph.org/latest/graph-partitioning.html"
+				},
+				"static": {
+					"type": "boolean",
+					"default": false,
+					"description": "See http://docs.janusgraph.org/latest/advanced-schema.html#_static_vertices"
+				},
+				"ttl": {
+					"type": "string",
+					"javaType": "com.newforma.titan.schema.types.TTLType",
+					"description": "Vertex TTL, see http://docs.janusgraph.org/latest/advanced-schema.html#_edge_and_vertex_ttl"
+				},
+				"properties": {
+					"type": "array",
+					"minItems": 1,
+					"items": {
+						"$ref": "#/definitions/PropertyDesc"
+					},
+					"uniqueItems": true,
+					"description": "Describes the properties this vertex may have and their meaning in its context"
+				},
+				"relationships": {
+					"type": "array",
+					"minItems": 1,
+					"items": {
+						"$ref": "#/definitions/VertexRelationshipDesc"
+					},
+					"uniqueItems": true,
+					"description": "Describes the relationships for this vertex where this vertex is either incoming or outgoing"
+				},
+				"doctags": {
+					"type": "string",
+					"javaType": "com.newforma.titan.schema.types.DoctagListType",
+					"description": "Optional comma-separated list of documentation tags associated with this vertex"
+				}
+			},
+			"required": ["label", "description"],
+			"additionalProperties": false
+		},
+		"EdgeLabel": {
+			"type": "object",
+			"javaType": "com.newforma.titan.schema.types.SchemaEdgeLabel",
+			"javaInterfaces": ["com.newforma.titan.schema.types.IDocTaggable"],
+			"title": "Graph edge definition",
+			"description": "Defines an edge in the graph",
+			"properties": {
+				"label": {
+					"type": "string",
+					"description": "Vertex label, see http://docs.janusgraph.org/latest/schema.html#_defining_edge_labels"
+				},
+				"description": {
+					"type": "string",
+					"description": "Human-readable description of this vertex type"
+				},
+				"multiplicity": {
+					"type": "string",
+					"enum": ["ONE2MANY", "MANY2ONE", "MULTI", "SIMPLE", "ONE2ONE"],
+					"default": "MULTI",
+					"javaType": "org.janusgraph.core.Multiplicity",
+					"description": "The multiplicity of this vertex. See http://docs.janusgraph.org/latest/schema.html#_edge_label_multiplicity"
+				},
+				"unidirected": {
+					"type": "boolean",
+					"default": false,
+					"description": "See http://docs.janusgraph.org/latest/advanced-schema.html#_unidirected_edges"
+				},
+				"invisible": {
+					"type": "boolean",
+					"default": false,
+					"description": "If set to true, this edge can be traversed only by explicitely naming it in the query, e.g. it cannot be discovered"
+				},
+				"signature": {
+					"$ref": "#/definitions/SignatureArray"
+				},
+				"sort_key": {
+					"$ref": "#/definitions/SortKey"
+				},
+				"ttl": {
+					"type": "string",
+					"javaType": "com.newforma.titan.schema.types.TTLType",
+					"description": "Edge TTL, see http://docs.janusgraph.org/latest/advanced-schema.html#_edge_and_vertex_ttl"
+				},
+				"relationships": {
+					"type": "array",
+					"minItems": 1,
+					"items": {
+						"$ref": "#/definitions/RelationshipDesc"
+					},
+					"uniqueItems": true,
+					"description": "Describes the relationships between different vertices expressed by using this edge"
+				},
+				"properties": {
+					"type": "array",
+					"minItems": 1,
+					"items": {
+						"$ref": "#/definitions/PropertyDesc"
+					},
+					"uniqueItems": true,
+					"description": "Describes the properties this edge may have and their meaning in its context"
+				},
+				"doctags": {
+					"type": "string",
+					"javaType": "com.newforma.titan.schema.types.DoctagListType",
+					"description": "Optional comma-separated list of documentation tags associated with this edge"
+				}
+			},
+			"required": [ "label", "description" ],
+			"additionalProperties": false
+		},
+		"SignatureArray": {
+			"type": "array",
+			"minItems": 1,
+			"items": {
+				"type": "string"
+			}
+		},
+		"SortKey": {
+			"type": "object",
+			"javaType": "com.newforma.titan.schema.types.SchemaSortKey",
+			"title": "Sort key",
+			"description": "Composite sort key that consiste of a list of property names and the sort order",
+			"properties": {
+				"keys": {
+					"type": "array",
+					"minItems": 1,
+					"items": {
+						"type": "string"
+					}
+				},
+				"order": {
+					"type": "string",
+					"enum": ["ASC", "DESC"],
+					"javaType": "org.janusgraph.graphdb.internal.Order"
+				}
+			},
+			"required": [ "keys", "order" ],
+			"additionalProperties": false
+		},
+		"PropertyDesc": {
+			"type": "object",
+			"javaType": "com.newforma.titan.schema.types.SchemaPropertyDesc",
+			"javaInterfaces": ["com.newforma.titan.schema.types.IDocTaggable"],
+			"description": "Human-readable property description",
+			"properties": {
+				"key": {
+					"type": "string",
+					"description": "Property key (name)"
+				},
+				"description": {
+					"type": "string",
+					"description": "Property description. If missing, then the description will be copied from the property definition"
+				},
+				"doctags": {
+					"type": "string",
+					"javaType": "com.newforma.titan.schema.types.DoctagListType",
+					"description": "Optional comma-separated list of documentation tags associated with this vertex"
+				}
+			},
+			"required": [ "key" ],
+			"additionalProperties": false
+		},
+		"RelationshipDesc": {
+			"type": "object",
+			"javaType": "com.newforma.titan.schema.types.SchemaRelationshipDesc",
+			"javaInterfaces": ["com.newforma.titan.schema.types.IDocTaggable"],
+			"title": "Relationship description",
+			"description": "Human-readable description of this relationship in context of the specif in and out edges",
+			"properties": {
+				"out": {
+					"type": "string",
+					"description": "Outgoing (tail) vertex for this edge"
+				},
+				"in": {
+					"type": "string",
+					"description": "Incoming (head) vertex for this edge"
+				},
+				"description": {
+					"type": "string",
+					"description": "Human-readable description of this specific relationship. If not provided, it is copied from the edge description."
+				},
+				"doctags": {
+					"type": "string",
+					"javaType": "com.newforma.titan.schema.types.DoctagListType",
+					"description": "Optional comma-separated list of documentation tags associated with this vertex"
+				}
+			},
+			"required": [ "out", "in" ],
+			"additionalProperties": false
+		},
+		"VertexRelationshipDesc": {
+			"type": "object",
+			"javaType": "com.newforma.titan.schema.types.SchemaVertexRelationshipDesc",
+			"javaInterfaces": ["com.newforma.titan.schema.types.IDocTaggable"],
+			"title": "Relationship description for the current vertex",
+			"description": "Human-readable description of this relationship in context of the current vertex.",
+			"properties": {
+				"vertex": {
+					"type": "string",
+					"description": "Incident vertex label"
+				},
+				"direction": {
+					"type": "string",
+					"enum": ["IN", "OUT" ],
+					"javaType": "org.apache.tinkerpop.gremlin.structure.Direction",
+					"description": "Direction relative to this vertex"
+				},
+				"edge": {
+					"type": "string",
+					"description": "Edge label"
+				},
+				"description": {
+					"type": "string",
+					"description": "Human-readable relationship description. If not provided, it is copied from the edge description."
+				},
+				"doctags": {
+					"type": "string",
+					"javaType": "com.newforma.titan.schema.types.DoctagListType",
+					"description": "Optional comma-separated list of documentation tags associated with this vertex"
+				}
+			},
+			"required": [ "vertex", "direction", "edge" ],
+			"additionalProperties": false
+		},
+		"Property": {
+			"type": "object",
+			"javaType": "com.newforma.titan.schema.types.SchemaPropertyDef",
+			"javaInterfaces": ["com.newforma.titan.schema.types.IDocTaggable"],
+			"title": "Property definition",
+			"description": "Defines the graph property key, see http://docs.janusgraph.org/latest/schema.html#_defining_property_keys",
+			"properties": {
+				"key": {
+					"type": "string",
+					"description": "Property name"
+				},
+				"cardinality": {
+					"type": "string",
+					"enum": ["SINGLE", "LIST", "SET"],
+					"default": "SINGLE",
+					"javaType": "org.janusgraph.core.Cardinality",
+					"description": "Property cardinality, see http://docs.janusgraph.org/latest/schema.html#property-cardinality"
+				},
+				"data_type": {
+					"type": "string",
+					"description": "Property data type, see http://docs.janusgraph.org/latest/schema.html#_property_key_data_type. Note that the data type is the fully qualified Java type name, e.g. java.lang.String for String etc."
+				},
+				"ttl": {
+					"type": "string",
+					"javaType": "com.newforma.titan.schema.types.TTLType",
+					"description": "Property TTL, see http://docs.janusgraph.org/latest/advanced-schema.html#_property_ttl"
+				},
+				"description": {
+					"type": "string",
+					"description": "Human-readable description of this property"
+				},
+				"meta": {
+					"$ref": "#/definitions/PropertyDefMeta"
+				},
+				"doctags": {
+					"type": "string",
+					"javaType": "com.newforma.titan.schema.types.DoctagListType",
+					"description": "Optional comma-separated list of documentation tags associated with this property"
+				}
+			},
+			"required": [ "key", "data_type", "description" ],
+			"additionalProperties": false
+		},
+		"PropertyDefMeta": {
+			"type": "object",
+			"javaType": "com.newforma.titan.schema.types.PropertyDefMeta",
+			"title": "Property key metadata",
+			"description": "Metadata to be used at runtime. May contain various information related to the property usage. Intended for both human and machine consumption",
+			"properties": {
+				"encryption": {
+					"$ref": "#/definitions/PropertyEncryptionDef"
+				}
+			},
+			"additionalProperties": false
+		},
+		"PropertyEncryptionDef": {
+			"type": "object",
+			"javaType": "com.newforma.titan.schema.types.PropertyEncryptionDef",
+			"title": "Property value encryption settings",
+			"properties": {
+				"always": {
+					"type": "boolean",
+					"default": false,
+					"description": "If set to true, all instances of this property must have their values encrypted"
+				},
+				"only_vertices": {
+					"type": "array",
+					"minItems": 1,
+					"items": {
+						"type": "string"
+					},
+					"description": "Only encrypt the property value if this property is used for these specific vertex labels"
+				},
+				"only_edges": {
+					"type": "array",
+					"minItems": 1,
+					"items": {
+						"type": "string"
+					},
+					"description": "Only encrypt the property value if this property is used for these specific edge labels"
+				}
+			},
+			"additionalProperties": false
+		},
+		"GraphIndex": {
+			"type": "object",
+			"javaType": "com.newforma.titan.schema.types.GraphIndexDef",
+			"javaInterfaces": ["com.newforma.titan.schema.types.IDocTaggable"],
+			"title": "Graph index definition, see http://docs.janusgraph.org/latest/indexes.html#graph-indexes",
+			"properties": {
+				"name": {
+					"type": "string",
+					"description": "Graph index name"
+				},
+				"rel_type": {
+					"type": "string",
+					"enum": ["vertex", "edge"],
+					"description": "Target relationship type (vertex or edge)"
+				},
+				"keys": {
+					"type": "array",
+					"minItems": 1,
+					"items": {
+						"$ref": "#/definitions/GraphIndexKey"
+					},
+					"description": "List of key definitions to be included in the index"
+				},
+				"unique": {
+					"type": "boolean",
+					"default": false,
+					"description": "True if the uniquness needs to be enforced"
+				},
+				"index_only": {
+					"type": "string",
+					"description": "Edge or vertex label if the index needs to be restriced to a specific edge or vertex"
+				},
+				"index_type": {
+					"type": "string",
+					"enum": ["composite", "mixed"],
+					"description": "Index type, see http://docs.janusgraph.org/latest/indexes.html#_composite_vs_mixed_index"
+				},
+				"index_backend": {
+					"type": "string",
+					"description": "Name of the index backend for this index (only needed for the mixed indexes)"
+				},
+				"doctags": {
+					"type": "string",
+					"javaType": "com.newforma.titan.schema.types.DoctagListType",
+					"description": "Optional comma-separated list of documentation tags associated with this index"
+				}
+			},
+			"required": ["name", "rel_type", "keys", "index_type"],
+			"additionalProperties": false
+		},
+		"GraphIndexKey": {
+			"type": "object",
+			"javaType": "com.newforma.titan.schema.types.GraphIndexKeyDef",
+			"title": "Graph Index key definition",
+			"description": "Defines one property for composite or mixed key with optional additional parameters",
+			"properties": {
+				"key": {
+					"type": "string",
+					"description": "Property key name"
+				},
+				"mapping": {
+					"type": "string",
+					"enum": ["DEFAULT", "STRING", "TEXT", "TEXTSTRING"],
+					"javaType": "org.janusgraph.core.schema.Mapping",
+					"description": "Mapping parameter, see http://docs.janusgraph.org/latest/index-parameters.html#_field_mapping"
+				},
+				"parameters": {
+					"type": "array",
+					"minItems": 0,
+					"items": {
+						"$ref": "#/definitions/ParameterKeyValue",
+						"description": "Key parameter, see http://docs.janusgraph.org/latest/index-parameters.html#_field_mapping"
+					},
+					"uniqueItems": true
+				}
+			},
+			"required": ["key"],
+			"additionalProperties": false
+		},
+		"ParameterKeyValue": {
+			"type": "object",
+			"javaType": "com.newforma.titan.schema.types.ParameterKeyValue",
+			"title": "Parameter key-value pair",
+			"description": "Composite or mixed index parameter key-value pair, see http://docs.janusgraph.org/latest/index-parameters.html#_field_mapping",
+			"properties": {
+				"param_key": {
+					"type": "string",
+					"description": "Parameter key, see http://titan.thinkaurelius.com/javadoc/1.0.0/com/thinkaurelius/titan/core/schema/Parameter.html#constructor.summary"
+				},
+				"param_value": {
+					"type": "string",
+					"description": "Parameter value, see http://titan.thinkaurelius.com/javadoc/1.0.0/com/thinkaurelius/titan/core/schema/Parameter.html#constructor.summary"
+				}
+			},
+			"required": ["param_key", "param_value"],
+			"additionalProperties": false
+		},
+		"LocalPropertyIndex": {
+			"type": "object",
+			"javaType": "com.newforma.titan.schema.types.LocalPropertyIndexDef",
+			"javaInterfaces": ["com.newforma.titan.schema.types.IDocTaggable"],
+			"title": "Local property index",
+			"description": "Local (vertex-centric) property index, see http://docs.janusgraph.org/latest/indexes.html#vertex-indexes",
+			"properties": {
+				"name": {
+					"type": "string",
+					"description": "Index name"
+				},
+				"key": {
+					"type": "string",
+					"description": "Property key to index"
+				},
+				"sort_key": {
+					"$ref": "#/definitions/SortKey",
+					"description": "(not used for property index) Index signature, see http://titan.thinkaurelius.com/javadoc/1.0.0/com/thinkaurelius/titan/graphdb/types/StandardRelationTypeMaker.html#signature-org.janusgraph.core.PropertyKey...-"
+				},
+				"doctags": {
+					"type": "string",
+					"javaType": "com.newforma.titan.schema.types.DoctagListType",
+					"description": "Optional comma-separated list of documentation tags associated with this index"
+				}
+			},
+			"required": ["name", "key", "sort_key"],
+			"additionalProperties": false
+		},
+		"LocalEdgeIndex": {
+			"type": "object",
+			"javaType": "com.newforma.titan.schema.types.LocalEdgeIndexDef",
+			"javaInterfaces": ["com.newforma.titan.schema.types.IDocTaggable"],
+			"title": "Local edge index",
+			"description": "Local (vertex-centric) edge index, see http://docs.janusgraph.org/latest/indexes.html#vertex-indexes",
+			"properties": {
+				"name": {
+					"type": "string",
+					"description": "Index name"
+				},
+				"label": {
+					"type": "string",
+					"description": "Edge label to build the index for"
+				},
+				"direction": {
+					"type": "string",
+					"enum": ["IN", "OUT", "BOTH"],
+					"default": "OUT",
+					"javaType": "org.apache.tinkerpop.gremlin.structure.Direction",
+					"description": "Index direction, see http://docs.janusgraph.org/latest/indexes.html#vertex-indexes"
+				},
+				"sort_key": {
+					"$ref": "#/definitions/SortKey",
+					"description": "Index keys, see https://static.javadoc.io/org.janusgraph/janusgraph-core/0.1.1/org/janusgraph/graphdb/types/StandardRelationTypeMaker.html#signature-org.janusgraph.core.PropertyKey...-"
+				},
+				"doctags": {
+					"type": "string",
+					"javaType": "com.newforma.titan.schema.types.DoctagListType",
+					"description": "Optional comma-separated list of documentation tags associated with this index"
+				}
+			},
+			"required": ["name", "label", "sort_key"],
+			"additionalProperties": false
+		},
+		"GraphNamingConventions": {
+			"type": "object",
+			"javaType": "com.newforma.titan.schema.types.GraphNamingConventions",
+			"title": "Graph naming conventions",
+			"description": "Provides a way to restrict various identifiers used in the graph to the specific patterns",
+			"properties": {
+				"vertexLabelRegex": {
+					"type": "string",
+					"javaName": "vertexLabelPattern",
+					"default": ".*",
+					"format": "regex",
+					"description": "Regular expression for valid vertex labels"
+				},
+				"edgeLabelRegex": {
+					"type": "string",
+					"javaName": "edgeLabelPattern",
+					"default": ".*",
+					"format": "regex",
+					"description": "Regular expression for valid edge labels"
+				},
+				"propertyKeyRegex": {
+					"type": "string",
+					"javaName": "propertyKeyPattern",
+					"default": ".*",
+					"format": "regex",
+					"description": "Regular expression for valid property keys"
+				},
+				"indexNameRegex": {
+					"type": "string",
+					"javaName": "indexNamePattern",
+					"default": ".*",
+					"format": "regex",
+					"description": "Regular expression for valid index names"
+				}
+			},
+			"additionalProperties": false
+		},
+		"DoctagMeta": {
+			"type": "object",
+			"javaType": "com.newforma.titan.schema.types.DoctagMeta",
+			"title": "Document tag metadata",
+			"description": "Provides additional information on a documentation tag. Documentation tags are used to mark fragments of the graph schema.",
+			"properties": {
+				"doctag": {
+					"type": "string",
+					"description": "Tag name (any characters except comma, leading and trailing spaces are ignored)"
+				},
+				"text": {
+					"type": "string",
+					"description": "Text description of the tag"
+				},
+				"url": {
+					"type": "string",
+					"description": "URL that contains more information about the tag (like a user story/epic description etc)"
+				}
+			},
+			"additionalProperties": false
+		},
+		"GraphDocumentationSettings": {
+			"type": "object",
+			"javaType": "com.newforma.titan.schema.types.GraphDocumentationSettings",
+			"title": "Graph documentation settings",
+			"description": "Provides additional controls for the documentation generator",
+			"properties": {
+				"doctag_cascading": {
+					"type": "string",
+					"enum": ["NO", "APPEND", "APPEND_IF_EMPTY", "REPLACE", "REPLACE_IF_EMPTY"],
+					"default": "NO",
+					"javaType": "com.newforma.titan.schema.types.DoctagCascading",
+					"description": "Allows to control how the documentation tags cascade to the nested schema elements (e.g. from the vertex definition to the properties and relationships defined inside etc)"
+				}
+			},
+			"additionalProperties": false
+		}
+	},
+
+	"type": "object",
+	"properties": {
+		"graph": {
+			"$ref": "#/definitions/GraphMeta",
+			"description": "Global graph parameters"
+		},
+		"vertices": {
+			"type": "array",
+			"minItems": 0,
+			"items": {
+				"$ref": "#/definitions/VertexLabel"
+			},
+			"uniqueItems": true,
+			"description": "List of graph vertex labels"
+		},
+		"edges": {
+			"type": "array",
+			"minItems": 0,
+			"items": {
+				"$ref": "#/definitions/EdgeLabel"
+			},
+			"uniqueItems": true,
+			"description": "List of graph edge labels"
+		},
+		"properties": {
+			"type": "array",
+			"minItems": 0,
+			"items": {
+				"$ref": "#/definitions/Property"
+			},
+			"uniqueItems": true,
+			"description": "List of graph property keys"
+		},
+		"graph_indexes": {
+			"type": "array",
+			"minItems": 0,
+			"items": {
+				"$ref": "#/definitions/GraphIndex"
+			},
+			"uniqueItems": true,
+			"description": "List of graph indexes"
+		},
+		"local_property_indexes": {
+			"type": "array",
+			"minItems": 0,
+			"items": {
+				"$ref": "#/definitions/LocalPropertyIndex"
+			},
+			"uniqueItems": true,
+			"description": "List of graph local property indexes"
+		},
+		"local_edge_indexes": {
+			"type": "array",
+			"minItems": 0,
+			"items": {
+				"$ref": "#/definitions/LocalEdgeIndex"
+			},
+			"uniqueItems": true,
+			"description": "List of graph local edge indexes"
+		},
+		"doctags_meta": {
+			"type": "array",
+			"minItems": 0,
+			"items": {
+				"$ref": "#/definitions/DoctagMeta"
+			},
+			"uniqueItems": true,
+			"description": "Additional information for the documentation tags"
+		},
+		"includes": {
+			"type": "array",
+			"minItems": 0,
+			"items": {
+				"type": "string"
+			},
+			"description": "List of additional schema files to include. The schema elements (e.g. everything except graph metadata) from files are merged recursively to the current schema"
+		}
+	},
+	"required": [
+		"graph",
+		"vertices",
+		"edges",
+		"properties",
+		"graph_indexes",
+		"local_property_indexes",
+		"local_edge_indexes"
+	],
+	"additionalProperties": false
+}

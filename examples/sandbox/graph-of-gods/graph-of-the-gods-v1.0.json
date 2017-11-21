@@ -1,0 +1,32 @@
+{
+        "graph": {
+                "name": "Graph Of The Gods schema",
+                "model_version": "1.1",
+                "schema_format_version": "1.0",
+                "defaults": {
+                        "vertex_partition": false,
+                        "edge_partition": false,
+                        "consistency_modifier": "DEFAULT"
+                },
+                "conventions": {
+                        "vertexLabelRegex": "^[A-Z][A-Za-z0-9]+[a-z]$",
+                        "edgeLabelRegex": "^[A-Z][A-Z_0-9]+[A-Z]$",
+                        "propertyKeyRegex": "^[a-z][a-z_0-9]+[a-z]$",
+                        "indexNameRegex": "^[a-z][A-Za-z]+$"
+                },
+                "indexing": {
+                        "default_indexing_backend": "search"
+                }
+        },
+        "vertices": [],
+        "edges": [],
+        "properties": [],
+        "graph_indexes": [],
+        "local_property_indexes": [],
+        "local_edge_indexes": [],
+
+        "includes": [
+                "gods-identities-1.0.json",
+                "gods-achievements-1.0.json"
+        ]
+}

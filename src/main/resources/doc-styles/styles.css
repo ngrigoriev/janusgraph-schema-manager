@@ -1,0 +1,111 @@
+h1.title {
+	font-size: xx-large;
+	color: darkblue;
+	text-align: center;
+}
+
+table.graph-meta td.param  {
+	font-weight: bold;
+	padding-right: 4em;
+}
+
+table.graph-meta td.value {
+	font-variant: small-caps;
+}
+
+table.graph-naming td {
+	border: 1px solid black;
+}
+
+table.graph-naming td.param {
+	font-weight: bold;
+}
+
+table.graph-naming td.value {
+	font-family: courier, console;
+}
+
+table {
+	border-spacing: 0;
+	border-collapse: collapse;
+}
+
+td.param {
+	text-align: left;
+	vertical-align: top;
+	padding-right: 2em;
+}
+
+td.value {
+	text-align: left;
+	vertical-align: top;
+}
+
+tr:nth-child(even) {
+	background: #f0f0f0;
+}
+
+tr:nth-child(odd) {
+	background: #ffffff;
+}
+
+td.value.prop_desc {
+	font-style: italic;
+}
+
+
+td.value.edge_desc {
+	font-style: italic;
+}
+
+td.value.vertex_desc {
+	font-style: italic;
+}
+
+dd.common_property {
+	font-style: italic;
+}
+
+dd.edge_relationship {
+	font-style: italic;
+}
+
+td.vertex_label {
+	margin-right: 1em;
+}
+
+td.edge_label {
+	margin-right: 1em;
+}
+
+td.graph_index_name {
+	margin-right: 1em;
+}
+
+dt.common_property a {
+	margin-right: 1em;
+}
+
+dt.vertex_relationship_vertices span.rel_vertex {
+	margin-right: 1em;
+}
+
+dt.edge_relationship_vertices span.rel_vertex {
+	margin-right: 1em;
+}
+
+span.doc-tag {
+    border-radius: 0.5em;
+    border: 1px solid lightblue;
+    padding: 2px 0.3em 2px 0.3em;
+    background-color: lightblue;
+    color: white;
+    margin-left: 0.5em;
+}
+
+span.doc-tag a {
+    color: white;
+    font-family: monospace;
+    font-size: smaller;
+    text-decoration: none;
+}

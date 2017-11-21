@@ -1,0 +1,112 @@
+<?xml version="1.0" ?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns">
+	<key id="name" for="node" attr.name="name" attr.type="string" />
+	<key id="type" for="node" attr.name="type" attr.type="string" />
+	<key id="time" for="edge" attr.name="time" attr.type="int" />
+	<key id="labelV" for="node" attr.name="labelV" attr.type="string" />
+	<key id="labelE" for="edge" attr.name="labelE" attr.type="string" />
+	<graph id="G" edgedefault="directed">
+		<node id="3">
+			<data key="labelV">God</data>
+			<data key="name">pluto</data>
+		</node>
+		<node id="2">
+			<data key="labelV">God</data>
+			<data key="name">neptune</data>
+		</node>
+		<node id="10">
+			<data key="labelV">Monster</data>
+			<data key="name">hydra</data>
+		</node>
+		<node id="1">
+			<data key="name">jupiter</data>
+			<data key="labelV">God</data>
+		</node>
+		<node id="0">
+			<data key="name">saturn</data>
+			<data key="labelV">Titan</data>
+		</node>
+		<node id="7">
+			<data key="name">hercules</data>
+			<data key="labelV">DemiGod</data>
+		</node>
+		<node id="6">
+			<data key="name">tartarus</data>
+			<data key="labelV">Location</data>
+		</node>
+		<node id="5">
+			<data key="name">sea</data>
+			<data key="labelV">Location</data>
+		</node>
+		<node id="4">
+			<data key="name">sky</data>
+			<data key="labelV">Location</data>
+		</node>
+		<node id="9">
+			<data key="name">nemean</data>
+			<data key="labelV">Monster</data>
+		</node>
+		<node id="8">
+			<data key="name">alcmene</data>
+			<data key="labelV">Human</data>
+		</node>
+		<node id="11">
+			<data key="name">cerberus</data>
+			<data key="labelV">Monster</data>
+		</node>
+		<edge id="23" source="3" target="11">
+			<data key="labelE">PET</data>
+		</edge>
+		<edge id="21" source="3" target="6">
+			<data key="labelE">LIVES</data>
+		</edge>
+		<edge id="17" source="3" target="1">
+			<data key="labelE">BROTHER</data>
+		</edge>
+		<edge id="18" source="3" target="2">
+			<data key="labelE">BROTHER</data>
+		</edge>
+		<edge id="20" source="2" target="5">
+			<data key="labelE">LIVES</data>
+		</edge>
+		<edge id="19" source="2" target="3">
+			<data key="labelE">BROTHER</data>
+		</edge>
+		<edge id="15" source="2" target="1">
+			<data key="labelE">BROTHER</data>
+		</edge>
+		<edge id="13" source="1" target="4">
+			<data key="labelE">LIVES</data>
+		</edge>
+		<edge id="16" source="1" target="3">
+			<data key="labelE">BROTHER</data>
+		</edge>
+		<edge id="14" source="1" target="2">
+			<data key="labelE">BROTHER</data>
+		</edge>
+		<edge id="12" source="1" target="0">
+			<data key="labelE">FATHER</data>
+		</edge>
+		<edge id="25" source="7" target="8">
+			<data key="labelE">MOTHER</data>
+		</edge>
+		<edge id="26" source="7" target="9">
+			<data key="labelE">BATTLED</data>
+			<data key="time">1</data>
+		</edge>
+		<edge id="27" source="7" target="10">
+			<data key="labelE">BATTLED</data>
+			<data key="time">2</data>
+		</edge>
+		<edge id="28" source="7" target="11">
+			<data key="labelE">BATTLED</data>
+			<data key="time">12</data>
+		</edge>
+		<edge id="24" source="7" target="1">
+			<data key="labelE">FATHER</data>
+		</edge>
+		<edge id="22" source="11" target="6">
+			<data key="labelE">LIVES</data>
+		</edge>
+	</graph>
+</graphml>
