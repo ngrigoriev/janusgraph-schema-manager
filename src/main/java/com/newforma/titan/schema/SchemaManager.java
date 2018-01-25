@@ -347,7 +347,7 @@ public class SchemaManager {
 		return index;
 	}
 
-    private JanusGraphIndex ensureGraphIndexReady(JanusGraph graph, String graphIndexName) throws SchemaManagementException {
+    JanusGraphIndex ensureGraphIndexReady(JanusGraph graph, String graphIndexName) throws SchemaManagementException {
 		ensureGraphIndexState(graph, graphIndexName, SchemaStatus.INSTALLED,
 				SchemaAction.REGISTER_INDEX, SchemaStatus.REGISTERED);
 		return ensureGraphIndexState(graph, graphIndexName, SchemaStatus.REGISTERED,
@@ -991,7 +991,7 @@ public class SchemaManager {
 	private void populateGraphMetadata(JanusGraph graph, GraphState graphState) throws SchemaManagementException {
 		GlobalMetaDataManager gdm = new GlobalMetaDataManager();
 		try {
-			gdm.updateGraph(graph, graphState.getGraphSchemaDef());
+			gdm.updateGraph(graph, graphState.getGraphSchemaDef(), this);
 		} catch (IOException e) {
 			throw new SchemaManagementException("Failed to persist graph metadata", e);
 		}

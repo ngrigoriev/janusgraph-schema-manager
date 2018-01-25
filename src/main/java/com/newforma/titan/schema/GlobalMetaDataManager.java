@@ -45,13 +45,13 @@ public class GlobalMetaDataManager {
 		// does nothing
 	}
 
-	void updateGraph(JanusGraph graph, GraphSchemaDef schemaDef) throws IOException, SchemaManagementException {
-		ensureConfigured(graph);
+	void updateGraph(final JanusGraph graph, final GraphSchemaDef schemaDef, final SchemaManager schemaManager) throws IOException, SchemaManagementException {
+		ensureConfigured(graph, schemaManager);
 		tag(graph, schemaDef);
 	}
 
 
-	private void tag(JanusGraph graph, GraphSchemaDef schemaDef) throws IOException {
+	private void tag(final JanusGraph graph, GraphSchemaDef schemaDef) throws IOException {
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd 'T' HH:mm:ss'Z'");
 		sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
 
@@ -71,7 +71,7 @@ public class GlobalMetaDataManager {
 	}
 
 
-	private void ensureConfigured(JanusGraph graph) throws IOException, SchemaManagementException {
+	private void ensureConfigured(final JanusGraph graph, final SchemaManager schemaManager) throws IOException, SchemaManagementException {
 
 		graph.tx().rollback();
 
@@ -139,20 +139,12 @@ public class GlobalMetaDataManager {
 				throw new SchemaManagementException("Unable to update index " + METADATA_ID_GRAPH_INDEX, e);
 			}
 			mgmt.commit();
+		} else if (idx.getIndexStatus(mgmt.getPropertyKey(METADATA_ID_PROPERTY_KEY)) == SchemaStatus.DISABLED) {
+		    throw new SchemaManagementException("Metadata index " + METADATA_ID_GRAPH_INDEX + " is DISABLED");
 		} else {
-			if (idx.getIndexStatus(mgmt.getPropertyKey(METADATA_ID_PROPERTY_KEY)) != SchemaStatus.ENABLED) {
-				// attempting to enable it
-				LOG.warn("Graph index {} exists but not ENABLED, attemptint to enable", METADATA_ID_GRAPH_INDEX);
-				try {
-					mgmt.updateIndex(mgmt.getGraphIndex(METADATA_ID_GRAPH_INDEX), SchemaAction.ENABLE_INDEX).get();
-				} catch (InterruptedException | ExecutionException e) {
-					throw new SchemaManagementException("Unable to update index " + METADATA_ID_GRAPH_INDEX, e);
-				}
-				mgmt.commit();
-			} else {
-				LOG.debug("Graph index {} exists", METADATA_ID_GRAPH_INDEX);
-				mgmt.rollback();
-			}
+		    mgmt.rollback();
+		    LOG.info("Metadata index {} exists", METADATA_ID_GRAPH_INDEX);
+		    schemaManager.ensureGraphIndexReady(graph, METADATA_ID_GRAPH_INDEX);
 		}
 	}
 }
