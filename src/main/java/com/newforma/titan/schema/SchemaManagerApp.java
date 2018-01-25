@@ -8,11 +8,13 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.newforma.titan.schema.actions.ReindexAction;
 import com.newforma.titan.schema.actions.ReindexAction.IndexTarget;
+import com.newforma.titan.schema.actions.ReindexAction.IndexingMethod;
 
 public class SchemaManagerApp {
 
@@ -23,6 +25,7 @@ public class SchemaManagerApp {
     private static final String OPTION_LOAD_GRAPHML = "l";
     private static final String OPTION_SAVE_GRAPHML = "s";
     private static final String OPTION_FILTER_TAGS = "t";
+    private static final String OPTION_INDEXING_METHOD = "m";
 
     private static final Logger LOG = LoggerFactory.getLogger(SchemaManagerApp.class);
 
@@ -49,11 +52,18 @@ public class SchemaManagerApp {
         final boolean doApplyChanges = cmdLine.hasOption(OPTION_WRITE_TO_DB);
         final String graphConfigFile = cmdLine.getOptionValue("g");
         final List<ReindexAction> reindexActions = new LinkedList<>();
-        if (cmdLine.hasOption('r')) {
-            reindexActions.add(new ReindexAction(IndexTarget.valueOf(cmdLine.getOptionValue('r'))));
+        final IndexingMethod indexingMethod;
+        if (cmdLine.hasOption(OPTION_INDEXING_METHOD)) {
+            indexingMethod = IndexingMethod.valueOf(cmdLine.getOptionValue(OPTION_INDEXING_METHOD).toUpperCase());
+        } else {
+            // default to local
+            indexingMethod = IndexingMethod.LOCAL;
         }
-        if (cmdLine.hasOption('i')) {
-            reindexActions.add(new ReindexAction(IndexTarget.NAMED, cmdLine.getOptionValue('i')));
+        if (cmdLine.hasOption(OPTION_REINDEX_DATA)) {
+            reindexActions.add(new ReindexAction(IndexTarget.valueOf(cmdLine.getOptionValue(OPTION_REINDEX_DATA))));
+        }
+        if (cmdLine.hasOption(OPTION_REINDEX_SPECIFIC)) {
+            reindexActions.add(new ReindexAction(IndexTarget.NAMED, indexingMethod, cmdLine.getOptionValue(OPTION_REINDEX_SPECIFIC)));
         }
         final String docDir = cmdLine.getOptionValue(OPTION_GENERATE_DOCS);
         final String graphMLToLoad = cmdLine.getOptionValue(OPTION_LOAD_GRAPHML);
@@ -80,6 +90,9 @@ public class SchemaManagerApp {
         options.addOption(OPTION_WRITE_TO_DB, false, "Write the relations defined by the schema to the graph");
         options.addOption(OPTION_REINDEX_DATA, true, "Reindex data: ALL, NEW");
         options.addOption(OPTION_REINDEX_SPECIFIC, true, "Reindex the specific index after applying the schema");
+        options.addOption(OPTION_INDEXING_METHOD, true, "Using the specific indexing method: one of " +
+                StringUtils.join(ReindexAction.IndexingMethod.values(), ',') + " ("  +
+                ReindexAction.IndexingMethod.LOCAL + " is the default)");
         options.addOption(OPTION_GENERATE_DOCS, true, "Generate documentation, write to the specified directory");
         options.addOption(OPTION_LOAD_GRAPHML, true, "Load specific GraphML file into the database");
         options.addOption(OPTION_SAVE_GRAPHML, true, "Save specific GraphML file into a file");

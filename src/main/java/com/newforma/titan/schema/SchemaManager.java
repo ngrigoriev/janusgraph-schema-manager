@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 
 import com.newforma.titan.schema.GraphState.ElementType;
 import com.newforma.titan.schema.actions.ReindexAction;
+import com.newforma.titan.schema.actions.ReindexAction.IndexingMethod;
 import com.newforma.titan.schema.types.GraphIndexDef;
 import com.newforma.titan.schema.types.GraphIndexDef.IndexType;
 import com.newforma.titan.schema.types.GraphIndexDef.RelType;
@@ -58,9 +59,12 @@ import org.janusgraph.core.schema.JanusGraphManagement.IndexBuilder;
 import org.janusgraph.core.schema.JanusGraphManagement.IndexJobFuture;
 import org.janusgraph.core.schema.JanusGraphSchemaType;
 import org.janusgraph.core.schema.VertexLabelMaker;
+import org.janusgraph.diskstorage.BackendException;
 import org.janusgraph.graphdb.database.StandardJanusGraph;
+import org.janusgraph.graphdb.database.management.GraphIndexStatusReport;
 import org.janusgraph.graphdb.database.management.ManagementSystem;
 import org.janusgraph.graphdb.types.StandardRelationTypeMaker;
+import org.janusgraph.hadoop.MapReduceIndexManagement;
 
 public class SchemaManager {
 
@@ -203,16 +207,16 @@ public class SchemaManager {
 		for(final ReindexAction action: reindexActionList) {
 			switch(action.getTarget()) {
 			case NAMED:
-				updateSingleIndex(graphState, graph, action.getIndexName());
+				updateSingleIndex(graphState, graph, action.getIndexName(), action.getMethod());
 				break;
 			case ALL:
 				for(final String indexName: graphState.getAllIndexes()) {
-					updateSingleIndex(graphState, graph, indexName);
+					updateSingleIndex(graphState, graph, indexName, action.getMethod());
 				}
 				break;
 			case NEW:
 				for(final String indexName: graphState.getNewIndexes()) {
-					updateSingleIndex(graphState, graph, indexName);
+					updateSingleIndex(graphState, graph, indexName, action.getMethod());
 				}
 				break;
 			default:
@@ -221,20 +225,34 @@ public class SchemaManager {
 		}
 	}
 
-	private void updateSingleIndex(GraphState graphState, JanusGraph graph, String indexName) throws SchemaManagementException {
+	private void updateSingleIndex(GraphState graphState, JanusGraph graph, String indexName, IndexingMethod indexingMethod) throws SchemaManagementException {
 		graph.tx().rollback();
 
 		Object indexDef = graphState.getIndexDef(indexName);
 
+		if (indexDef == null) {
+		    throw new SchemaManagementException("Unkniwn index " + indexName);
+		}
+
 		try {
 			if (indexDef instanceof GraphIndexDef) {
 				LOG.info("Updating graph index {}", indexName);
-				final JanusGraphManagement mgmt = graph.openManagement();
-				ensureGraphIndexReady(graph, mgmt.getGraphIndex(indexName));
-				mgmt.rollback();
+				ensureGraphIndexReady(graph, indexName);
 
 				final JanusGraphManagement mgmtUp = graph.openManagement();
-				mgmtUp.updateIndex(mgmtUp.getGraphIndex(indexName), SchemaAction.REINDEX).get();
+                switch (indexingMethod) {
+                case LOCAL:
+                    mgmtUp.updateIndex(mgmtUp.getGraphIndex(indexName), SchemaAction.REINDEX).get();
+                    break;
+                case HADOOP:
+                case HADOOP2:
+                    MapReduceIndexManagement mr = new MapReduceIndexManagement(graph);
+                    mr.updateIndex(mgmtUp.getGraphIndex(indexName), SchemaAction.REINDEX).get();
+                    break;
+                default:
+                    throw new RuntimeException("Unsupported reindexing method: " + indexingMethod);
+                }
+
 				mgmtUp.commit();
 			} else if (indexDef instanceof LocalEdgeIndexDef) {
 				LOG.info("Updating local edge index {}", indexName);
@@ -244,7 +262,18 @@ public class SchemaManager {
 				mgmt.rollback();
 
 				final JanusGraphManagement mgmtUp = graph.openManagement();
-				mgmtUp.updateIndex(mgmtUp.getRelationIndex(mgmtUp.getEdgeLabel(localIndexDef.getLabel()), indexName), SchemaAction.REINDEX).get();
+                switch (indexingMethod) {
+                case LOCAL:
+                    mgmtUp.updateIndex(mgmtUp.getRelationIndex(mgmtUp.getEdgeLabel(localIndexDef.getLabel()), indexName), SchemaAction.REINDEX).get();
+                    break;
+                case HADOOP:
+                case HADOOP2:
+                    MapReduceIndexManagement mr = new MapReduceIndexManagement(graph);
+                    mr.updateIndex(mgmtUp.getRelationIndex(mgmtUp.getEdgeLabel(localIndexDef.getLabel()), indexName), SchemaAction.REINDEX).get();
+                    break;
+                default:
+                    throw new RuntimeException("Unsupported reindexing method: " + indexingMethod);
+                }
 				mgmtUp.commit();
 			} else if (indexDef instanceof LocalPropertyIndexDef) {
 				LOG.info("Updating local property index {}", indexName);
@@ -255,14 +284,27 @@ public class SchemaManager {
 				mgmt.rollback();
 
 				final JanusGraphManagement mgmtUp = graph.openManagement();
-				mgmtUp.updateIndex(mgmtUp.getRelationIndex(mgmtUp.getPropertyKey(localIndexDef.getKey()), indexName), SchemaAction.REINDEX).get();
+                switch (indexingMethod) {
+                case LOCAL:
+                    mgmtUp.updateIndex(mgmtUp.getRelationIndex(mgmtUp.getPropertyKey(localIndexDef.getKey()), indexName), SchemaAction.REINDEX).get();
+                    break;
+                case HADOOP:
+                case HADOOP2:
+                    MapReduceIndexManagement mr = new MapReduceIndexManagement(graph);
+                    mr.updateIndex(mgmtUp.getRelationIndex(mgmtUp.getPropertyKey(localIndexDef.getKey()), indexName), SchemaAction.REINDEX).get();
+                    break;
+                default:
+                    throw new RuntimeException("Unsupported reindexing method: " + indexingMethod);
+                }
 				mgmtUp.commit();
 			} else {
 				throw new SchemaManagementException("Unsupported index type " + indexDef);
 			}
 		} catch (InterruptedException | ExecutionException e) {
 			throw new SchemaManagementException("Unable to update index", e);
-		}
+		} catch (BackendException e) {
+		    throw new SchemaManagementException("Backend error, unable to update index", e);
+        }
 	}
 
 	private RelationTypeIndex ensureLocalIndexReady(JanusGraph graph, RelationTypeIndex index, String relationTypeName) throws SchemaManagementException {
@@ -305,23 +347,23 @@ public class SchemaManager {
 		return index;
 	}
 
-	private JanusGraphIndex ensureGraphIndexReady(JanusGraph graph, JanusGraphIndex graphIndex) throws SchemaManagementException {
-		JanusGraphIndex index2 = ensureGraphIndexState(graph, graphIndex, SchemaStatus.INSTALLED,
+    private JanusGraphIndex ensureGraphIndexReady(JanusGraph graph, String graphIndexName) throws SchemaManagementException {
+		ensureGraphIndexState(graph, graphIndexName, SchemaStatus.INSTALLED,
 				SchemaAction.REGISTER_INDEX, SchemaStatus.REGISTERED);
-		return ensureGraphIndexState(graph, index2, SchemaStatus.REGISTERED,
+		return ensureGraphIndexState(graph, graphIndexName, SchemaStatus.REGISTERED,
 				SchemaAction.ENABLE_INDEX, SchemaStatus.ENABLED);
 	}
 
-	private JanusGraphIndex ensureGraphIndexState(JanusGraph graph, JanusGraphIndex graphIndex,
+	private JanusGraphIndex ensureGraphIndexState(JanusGraph graph, String graphIndexName,
 			SchemaStatus testState, SchemaAction action, SchemaStatus targetState) throws SchemaManagementException {
 
 		final JanusGraphManagement mgmt = graph.openManagement();
-		JanusGraphIndex dbIndex = mgmt.getGraphIndex(graphIndex.name());
+		JanusGraphIndex dbIndex = mgmt.getGraphIndex(graphIndexName);
 
 		for(final PropertyKey pk: dbIndex.getFieldKeys()) {
 			final SchemaStatus oldState = dbIndex.getIndexStatus(pk);
 			if (oldState == testState) {
-				LOG.warn("Index \"{}\" status is {} for property \"{}\", attempting to {} it...", graphIndex.name(), pk.name(), testState, action);
+				LOG.warn("Index \"{}\" status is {} for property \"{}\", attempting to {} it...", graphIndexName, pk.name(), testState, action);
 				try {
 
 					IndexJobFuture future = mgmt.updateIndex(dbIndex, action);
@@ -331,18 +373,19 @@ public class SchemaManager {
 						future.get();	// may be useless as they are sometimes empty ones
 					}
 					mgmt.commit();
-					ManagementSystem.awaitGraphIndexStatus(graph, graphIndex.name())
+					final GraphIndexStatusReport report = ManagementSystem.awaitGraphIndexStatus(graph, graphIndexName)
 						.status(targetState)
 						.timeout(INDEX_REGISTERED_TIMEOUT_MIN, ChronoUnit.MINUTES)
 						.call();
-					if (dbIndex.getIndexStatus(pk) == oldState) {
-						throw new SchemaManagementException("Unable to change index \"" + graphIndex.name() + "\" state for property \"" + pk.name() +
+					final SchemaStatus newState = report.getConvergedKeys().get(pk.name());
+					if (newState == oldState) {
+						throw new SchemaManagementException("Unable to change index \"" + graphIndexName + "\" state for property \"" + pk.name() +
 								"\" using action " + action +
 								", index is still in state " + oldState);
 					}
-					LOG.info("Index \"{}\" status has changed to {} for property \"{}\"", graphIndex.name(), graphIndex.getIndexStatus(pk), pk.name());
+					LOG.info("Index \"{}\" status report for property \"{}\": {}", graphIndexName, pk.name(), report.toString());
 				} catch (Exception e) {
-					throw new SchemaManagementException("Unable to change index \"" + graphIndex.name()
+					throw new SchemaManagementException("Unable to change index \"" + graphIndexName
 							+ "\" state for property \"" + pk.name() + "\" using action " + action, e);
 				}
 			} else {
