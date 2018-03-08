@@ -68,10 +68,9 @@ import org.janusgraph.hadoop.MapReduceIndexManagement;
 
 public class SchemaManager {
 
-	private static final int INDEX_REGISTERED_TIMEOUT_MIN = 5;
-
 	private static final Logger LOG = LoggerFactory.getLogger(SchemaManager.class);
 
+	public static final int DEFAULT_INDEX_REGISTERED_TIMEOUT_SECS = 300;
 	private final String graphSchemaFileName;
 	private final String graphConfigFileName;
 	private boolean doApplyChanges;
@@ -79,6 +78,7 @@ public class SchemaManager {
 	private String graphMLFileToLoad;
 	private String docTagFilter;
 	private String graphMLFileToSave;
+	private int reindexTimeoutInSecs = DEFAULT_INDEX_REGISTERED_TIMEOUT_SECS;
 
 	private List<ReindexAction> reindexActions = Collections.emptyList();
 
@@ -116,6 +116,11 @@ public class SchemaManager {
 		this.graphMLFileToSave = graphMLFileToSave;
 		return this;
 	}
+	
+	public SchemaManager reindexingTimeout(int timeoutInSecs) {
+		this.reindexTimeoutInSecs = timeoutInSecs;
+		return this;
+	}
 
 	void run() throws SchemaManagementException {
 		LOG.debug("Processing schema from {} for graph {}, applying changes={}", graphSchemaFileName, graphConfigFileName,
@@ -145,61 +150,68 @@ public class SchemaManager {
 		} catch (ConfigurationException e) {
 			throw new SchemaManagementException("Failed to load graph configuration from " + graphConfigFileName, e);
 		}
-
+		
 		final JanusGraph graph = JanusGraphFactory.open(graphConfig);
-		LOG.info("Graph connection successful");
-
-		if (graph instanceof StandardJanusGraph && ((StandardJanusGraph)graph).getBackend().getStoreFeatures().hasCellTTL()) {
-			graphState.setTtlSupported(true);
-		}
-
-		// 1. Validate the values in the schema as much as possible
-
-		LOG.debug("Validating graph schema definition");
+		
 		try {
-			new SchemaValidator().validate(graphDef);
-		} catch (SchemaValidationException e) {
-			graph.close();
-			throw new SchemaManagementException("Failed to validate the graph schema", e);
-		}
 
-		// 2. For each schema element check if it exists in the database already
-		// and if it conflicts the definition
-		LOG.debug("Verifying existing graph elements");
-		verifyExistingGraphElements(graph, graphState, graphDef);
+			LOG.info("Graph connection successful");
 
-		// 3. For each non-existing relation type - create one (unless doing
-		// dry-run)
-		if (doApplyChanges) {
-			populateNewGraphElements(graph, graphState, graphDef);
-		} else {
-			LOG.info("Dry-run: NOT creating graph elements");
-		}
+			if (graph instanceof StandardJanusGraph
+					&& ((StandardJanusGraph) graph).getBackend().getStoreFeatures().hasCellTTL()) {
+				graphState.setTtlSupported(true);
+			}
 
-		reindexData(graph, graphState, reindexActions);
+			// 1. Validate the values in the schema as much as possible
 
-		if (!StringUtils.isEmpty(graphMLFileToLoad)) {
-			new GraphMLLoader(graph, graphMLFileToLoad).run();
-		}
-
-		if (!StringUtils.isEmpty(graphMLFileToSave)) {
-			new GraphMLSaver(graph, graphMLFileToSave).run();
-		}
-
-		graph.close();
-
-		if (!StringUtils.isEmpty(docDir)) {
+			LOG.debug("Validating graph schema definition");
 			try {
-			    DocTagGraphFilter filter = new DocTagGraphFilter();
-			    final GraphState filteredGraphState =
-			            filter.filterSchema(graphState, docTagFilter);
-				new DocGenerator().generate(filteredGraphState, docDir);
-				new DOTGenerator().generate(filteredGraphState, docDir);
-			} catch (IOException e) {
-				throw new SchemaManagementException("Failed to generate the documentation", e);
+				new SchemaValidator().validate(graphDef);
 			} catch (SchemaValidationException e) {
-                throw new SchemaManagementException("Failed to validate the graph after applying the tag filters", e);
-            }
+				throw new SchemaManagementException("Failed to validate the graph schema", e);
+			}
+
+			// 2. For each schema element check if it exists in the database
+			// already
+			// and if it conflicts the definition
+			LOG.debug("Verifying existing graph elements");
+			verifyExistingGraphElements(graph, graphState, graphDef);
+
+			// 3. For each non-existing relation type - create one (unless doing
+			// dry-run)
+			if (doApplyChanges) {
+				populateNewGraphElements(graph, graphState, graphDef);
+			} else {
+				LOG.info("Dry-run: NOT creating graph elements");
+			}
+
+			reindexData(graph, graphState, reindexActions);
+
+			if (!StringUtils.isEmpty(graphMLFileToLoad)) {
+				new GraphMLLoader(graph, graphMLFileToLoad).run();
+			}
+
+			if (!StringUtils.isEmpty(graphMLFileToSave)) {
+				new GraphMLSaver(graph, graphMLFileToSave).run();
+			}
+
+			if (!StringUtils.isEmpty(docDir)) {
+				try {
+					DocTagGraphFilter filter = new DocTagGraphFilter();
+					final GraphState filteredGraphState = filter.filterSchema(graphState, docTagFilter);
+					new DocGenerator().generate(filteredGraphState, docDir);
+					new DOTGenerator().generate(filteredGraphState, docDir);
+				} catch (IOException e) {
+					throw new SchemaManagementException("Failed to generate the documentation", e);
+				} catch (SchemaValidationException e) {
+					throw new SchemaManagementException("Failed to validate the graph after applying the tag filters",
+							e);
+				}
+			}
+		} finally {
+			if (graph != null) {
+				graph.close();
+			}
 		}
 	}
 
@@ -330,7 +342,7 @@ public class SchemaManager {
 				mgmt.commit();
 				ManagementSystem.awaitRelationIndexStatus(graph, index.name(), relationTypeName)
 					.status(targetState)
-					.timeout(INDEX_REGISTERED_TIMEOUT_MIN, ChronoUnit.MINUTES)
+					.timeout(this.reindexTimeoutInSecs, ChronoUnit.SECONDS)
 					.call();
 				if (index.getIndexStatus() == oldState) {
 					throw new SchemaManagementException("Unable to change index \"" + index.name() + "\" state using action " + action +
@@ -375,7 +387,7 @@ public class SchemaManager {
 					mgmt.commit();
 					final GraphIndexStatusReport report = ManagementSystem.awaitGraphIndexStatus(graph, graphIndexName)
 						.status(targetState)
-						.timeout(INDEX_REGISTERED_TIMEOUT_MIN, ChronoUnit.MINUTES)
+						.timeout(this.reindexTimeoutInSecs, ChronoUnit.SECONDS)
 						.call();
 					final SchemaStatus newState = report.getConvergedKeys().get(pk.name());
 					if (newState == oldState) {
@@ -858,7 +870,7 @@ public class SchemaManager {
 				LOG.info("Waiting for the index {} to become available...", indexName);
 				ManagementSystem.awaitGraphIndexStatus(graph, indexName)
 						.status(SchemaStatus.REGISTERED)
-						.timeout(INDEX_REGISTERED_TIMEOUT_MIN, ChronoUnit.MINUTES)
+						.timeout(this.reindexTimeoutInSecs, ChronoUnit.SECONDS)
 						.call();
 
 				LOG.info("Enabling index {}...", indexName);
@@ -906,7 +918,7 @@ public class SchemaManager {
 				LOG.info("Waiting for the local property index {} to become available...", indexName);
 				ManagementSystem.awaitRelationIndexStatus(graph, indexName, localPropIndexDef.getKey())
 						.status(SchemaStatus.REGISTERED)
-						.timeout(INDEX_REGISTERED_TIMEOUT_MIN, ChronoUnit.MINUTES)
+						.timeout(this.reindexTimeoutInSecs, ChronoUnit.SECONDS)
 						.call();
 
 				LOG.info("Enabling local property index {}...", indexName);
@@ -955,7 +967,7 @@ public class SchemaManager {
 				LOG.info("Waiting for the local edge index {} to become available...", indexName);
 				ManagementSystem.awaitRelationIndexStatus(graph, indexName, localEdgeIndexDef.getLabel())
 						.status(SchemaStatus.REGISTERED)
-						.timeout(INDEX_REGISTERED_TIMEOUT_MIN, ChronoUnit.MINUTES)
+						.timeout(this.reindexTimeoutInSecs, ChronoUnit.SECONDS)
 						.call();
 
 				LOG.info("Enabling local edge index {}...", indexName);
