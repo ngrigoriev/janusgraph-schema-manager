@@ -26,6 +26,7 @@ public class SchemaManagerApp {
     private static final String OPTION_SAVE_GRAPHML = "s";
     private static final String OPTION_FILTER_TAGS = "t";
     private static final String OPTION_INDEXING_METHOD = "m";
+    private static final String OPTION_REINDEX_TIMEOUT = "it";
 
     private static final Logger LOG = LoggerFactory.getLogger(SchemaManagerApp.class);
 
@@ -65,6 +66,12 @@ public class SchemaManagerApp {
         if (cmdLine.hasOption(OPTION_REINDEX_SPECIFIC)) {
             reindexActions.add(new ReindexAction(IndexTarget.NAMED, indexingMethod, cmdLine.getOptionValue(OPTION_REINDEX_SPECIFIC)));
         }
+        
+        int reindexTimeoutInSecs = SchemaManager.DEFAULT_INDEX_REGISTERED_TIMEOUT_SECS;
+        if (cmdLine.hasOption(OPTION_REINDEX_TIMEOUT)) {
+        	reindexTimeoutInSecs = Integer.parseInt(cmdLine.getOptionValue(OPTION_REINDEX_TIMEOUT));
+        }
+
         final String docDir = cmdLine.getOptionValue(OPTION_GENERATE_DOCS);
         final String graphMLToLoad = cmdLine.getOptionValue(OPTION_LOAD_GRAPHML);
         final String graphMLToSave = cmdLine.getOptionValue(OPTION_SAVE_GRAPHML);
@@ -76,6 +83,7 @@ public class SchemaManagerApp {
                     .andReindex(reindexActions)
                     .applyTagFilter(tagFilter).andGenerateDocumentation(docDir)
                     .andLoadData(graphMLToLoad)
+                    .reindexingTimeout(reindexTimeoutInSecs)
                     ./*andSaveData(graphMLToSave).*/run();
         } catch (Throwable t) {
             LOG.error("ERROR", t);
@@ -102,6 +110,7 @@ public class SchemaManagerApp {
                 + "specified tags will be included in the documentation and the elements having the tags prefixed with "
                 + "\"!\" will be excluded.");
         options.addRequiredOption("g", "graph-config", true, "Graph property file name");
+        options.addOption(OPTION_REINDEX_TIMEOUT, true, "Specify the amount of time in seconds to wait before timing out on an index creation. Default 300 seconds.");
         return options;
     }
 
