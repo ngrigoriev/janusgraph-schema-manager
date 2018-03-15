@@ -116,7 +116,7 @@ public class SchemaManager {
 		this.graphMLFileToSave = graphMLFileToSave;
 		return this;
 	}
-	
+
 	public SchemaManager reindexingTimeout(int timeoutInSecs) {
 		this.reindexTimeoutInSecs = timeoutInSecs;
 		return this;
@@ -150,9 +150,9 @@ public class SchemaManager {
 		} catch (ConfigurationException e) {
 			throw new SchemaManagementException("Failed to load graph configuration from " + graphConfigFileName, e);
 		}
-		
+
 		final JanusGraph graph = JanusGraphFactory.open(graphConfig);
-		
+
 		try {
 
 			LOG.info("Graph connection successful");
@@ -231,6 +231,12 @@ public class SchemaManager {
 					updateSingleIndex(graphState, graph, indexName, action.getMethod());
 				}
 				break;
+            case UNAVAILABLE:
+                for(final String indexName: IndexUtils.getUnavailableIndexes(graphState.getAllIndexes(), graphState, graph)) {
+                    LOG.info("Index {} is not available, updating", indexName);
+                    updateSingleIndex(graphState, graph, indexName, action.getMethod());
+                }
+                break;
 			default:
 				throw new RuntimeException("Unsupported value " + action.getTarget());
 			}
@@ -243,7 +249,7 @@ public class SchemaManager {
 		Object indexDef = graphState.getIndexDef(indexName);
 
 		if (indexDef == null) {
-		    throw new SchemaManagementException("Unkniwn index " + indexName);
+		    throw new SchemaManagementException("Unknown index " + indexName);
 		}
 
 		try {

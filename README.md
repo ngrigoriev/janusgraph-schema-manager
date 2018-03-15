@@ -153,6 +153,40 @@ A primitive DOT file is generated (graph.dot) along with the documentation. You 
 dot -Tpdf generated-docs/graph.dot  | open -f -a /Applications/Preview.app
 ```
 
+# Graph maintenance
+
+## Rebuilding the indexes
+
+Normally when new index is created it gets enabled and starts working from this moment. However, sometimes the existing data must be re-indexed - for example, if the new index is built on the data that already existed in the graph or after some sort of recovery.
+
+The schema manager can re-index either one named index, all defined indexes, new ones created during last run or all indexes that are not currently in usable state.
+
+
+### Reindex one specific index
+
+```
+bin/schema_manager.sh  -g graph.properties -i index-name -w schema.json
+```
+
+### Reindex everything
+
+```
+bin/schema_manager.sh  -g graph.properties -r ALL -w schema.json
+```
+
+### Reindex only newly created indexes
+
+```
+bin/schema_manager.sh  -g graph.properties -r NEW -w schema.json
+```
+
+### Reindex only unavailable indexes
+
+```
+bin/schema_manager.sh  -g graph.properties -r UNAVAILABLE -w schema.json
+```
+
+In this case the state of each index defined in the schema will be verified. If an index or any of its properties is in the state REGISTERED or INSTALLED, the tool will re-index the data and enable the index. If the index or any of its components is in DISABLED state, it will be ignored.
 
 
 # Plans for future
