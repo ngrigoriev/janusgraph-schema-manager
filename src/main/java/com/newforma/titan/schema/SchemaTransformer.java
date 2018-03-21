@@ -49,21 +49,25 @@ public class SchemaTransformer {
             return schemaDef;
         }
         schemaDef.getVertices().stream().
+            filter(v -> v.getDoctags() != null).
             flatMap(v -> v.getProperties().stream().
                     filter(Objects::nonNull).
                     map(p -> new AbstractMap.SimpleEntry<DoctagListType, IDocTaggable>(v.getDoctags(), p))).
                 forEach(t -> cascadeTagList(t, cascadingSettings));
         schemaDef.getVertices().stream().
+            filter(v -> v.getDoctags() != null).
             flatMap(v -> v.getRelationships().stream().
                     filter(Objects::nonNull).
                     map(p -> new AbstractMap.SimpleEntry<DoctagListType, IDocTaggable>(v.getDoctags(), p))).
                 forEach(t -> cascadeTagList(t, cascadingSettings));
         schemaDef.getEdges().stream().
+            filter(e -> e.getDoctags() != null).
             flatMap(e -> e.getProperties().stream().
                     filter(Objects::nonNull).
                     map(p -> new AbstractMap.SimpleEntry<DoctagListType, IDocTaggable>(e.getDoctags(), p))).
                 forEach(t -> cascadeTagList(t, cascadingSettings));
         schemaDef.getEdges().stream().
+            filter(e -> e.getDoctags() != null).
             flatMap(e -> e.getRelationships().stream().
                     filter(Objects::nonNull).
                     map(p -> new AbstractMap.SimpleEntry<DoctagListType, IDocTaggable>(e.getDoctags(), p))).

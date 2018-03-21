@@ -66,7 +66,7 @@ public class SchemaManagerApp {
         if (cmdLine.hasOption(OPTION_REINDEX_SPECIFIC)) {
             reindexActions.add(new ReindexAction(IndexTarget.NAMED, indexingMethod, cmdLine.getOptionValue(OPTION_REINDEX_SPECIFIC)));
         }
-        
+
         int reindexTimeoutInSecs = SchemaManager.DEFAULT_INDEX_REGISTERED_TIMEOUT_SECS;
         if (cmdLine.hasOption(OPTION_REINDEX_TIMEOUT)) {
         	reindexTimeoutInSecs = Integer.parseInt(cmdLine.getOptionValue(OPTION_REINDEX_TIMEOUT));
@@ -96,7 +96,7 @@ public class SchemaManagerApp {
     private static Options populateOptions() {
         final Options options = new Options();
         options.addOption(OPTION_WRITE_TO_DB, false, "Write the relations defined by the schema to the graph");
-        options.addOption(OPTION_REINDEX_DATA, true, "Reindex data: ALL, NEW");
+        options.addOption(OPTION_REINDEX_DATA, true, "Reindex data: ALL, NEW, UNAVAILABLE");
         options.addOption(OPTION_REINDEX_SPECIFIC, true, "Reindex the specific index after applying the schema");
         options.addOption(OPTION_INDEXING_METHOD, true, "Using the specific indexing method: one of " +
                 StringUtils.join(ReindexAction.IndexingMethod.values(), ',') + " ("  +

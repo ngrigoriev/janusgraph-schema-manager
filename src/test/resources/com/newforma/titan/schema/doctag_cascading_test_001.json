@@ -1,0 +1,113 @@
+{
+        "graph": {
+                "name": "Unit test 001",
+                "model_version": "1.1",
+                "schema_format_version": "1.0",
+                "defaults": {
+                        "vertex_partition": false,
+                        "edge_partition": false,
+                        "consistency_modifier": "DEFAULT"
+                },
+                "documentation": {
+                		"doctag_cascading": "REPLACE_IF_EMPTY"
+                }
+        },
+        "vertices": [
+			{
+				"label": "v1",
+				"description": "v1",
+				"doctags": "vtag1, vtag2",
+				"relationships": [
+					{
+						"direction": "OUT",
+						"edge": "e1",
+						"vertex": "v2",
+						"description": "v1 -> [e1] -> v2"
+					}
+				],
+				"properties": [
+					{
+						"key": "p1",
+						"description": "v1.p1"
+					}
+				]
+			},
+			{
+				"label": "v2",
+				"description": "v2",
+				"doctags": "vtag3, vtag4",
+				"relationships": [
+					{
+						"direction": "OUT",
+						"edge": "e2",
+						"vertex": "v1",
+						"description": "v2 -> [e2] -> v1"
+					}
+				],
+				"properties": [
+					{
+						"key": "p2",
+						"description": "v2.p2"
+					}
+				]
+			}
+        ],
+        "edges": [
+			{
+				"label": "e1",
+				"description": "e1",
+				"multiplicity": "MULTI",
+				"doctags": "etag1, etag2",
+				"relationships": [
+					{
+						"description": "v1 -> [e1] -> v2",
+						"out": "v1",
+						"in": "v2"
+					}
+				],
+				"properties": [
+					{
+						"key": "p1",
+						"description": "e1.p1"
+					}
+				]
+			},
+			{
+				"label": "e2",
+				"description": "e2",
+				"multiplicity": "MULTI",
+				"doctags": "etag3, etag4",
+				"relationships": [
+					{
+						"description": "v1 -> [e1] -> v2",
+						"out": "v1",
+						"in": "v2"
+					}
+				],
+				"properties": [
+					{
+						"key": "p2",
+						"description": "e2.p1"
+					}
+				]
+			}
+        ],
+        "properties": [
+			{
+				"key": "p1",
+				"cardinality": "SINGLE",
+				"data_type": "java.lang.String",
+				"description": "p1"
+			},
+			{
+				"key": "p2",
+				"cardinality": "SINGLE",
+				"data_type": "java.lang.String",
+				"description": "p2"
+			}
+        ],
+        "graph_indexes": [],
+        "local_property_indexes": [],
+        "local_edge_indexes": [],
+        "includes": []
+}
