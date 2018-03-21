@@ -1,7 +1,11 @@
 package com.newforma.titan.schema;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.HashSet;
 
 import org.apache.commons.lang3.StringUtils;
@@ -43,10 +47,17 @@ public class SchemaLoader {
     }
 
     public GraphSchemaDef loadFrom(File rootFile) throws IOException, SchemaValidationException {
-        HashSet<String> includesTracker = new HashSet<>();
-        includesTracker.add(rootFile.getAbsolutePath());
+        try (InputStream is = new FileInputStream(rootFile)){
+            return loadFrom(is, rootFile.getName(), rootFile.getParentFile());
+        }
+    }
 
-        return processIncludes(loadSingleJsonFrom(rootFile), includesTracker, rootFile.getParentFile());
+    // TODO: implement include resolvers
+    public GraphSchemaDef loadFrom(final InputStream schemaStream, String rootName, File basePath) throws IOException, SchemaValidationException {
+        HashSet<String> includesTracker = new HashSet<>();
+        includesTracker.add(new File(basePath, rootName).getAbsolutePath());
+
+        return processIncludes(loadSingleJsonFrom(schemaStream), includesTracker, basePath);
     }
 
     private GraphSchemaDef processIncludes(GraphSchemaDef rootSchema, HashSet<String> includesTracker, File baseDir)
@@ -65,8 +76,12 @@ public class SchemaLoader {
             }
             LOG.info("Loading included schema from {}", f.getAbsolutePath());
 
-            final GraphSchemaDef nestedSchema = processIncludes(loadSingleJsonFrom(f), includesTracker,
+            final GraphSchemaDef nestedSchema;
+
+            try (InputStream is = new FileInputStream(f)) {
+                nestedSchema = processIncludes(loadSingleJsonFrom(is), includesTracker,
                     f.getParentFile());
+            }
 
             // merging all the elements of this nested schema into the parent
             rootSchema.getEdges().addAll(nestedSchema.getEdges());
@@ -81,8 +96,8 @@ public class SchemaLoader {
         return rootSchema;
     }
 
-    private GraphSchemaDef loadSingleJsonFrom(File file) throws IOException, SchemaValidationException {
-        final JsonNode titanSchema = JsonLoader.fromFile(file);
+    private GraphSchemaDef loadSingleJsonFrom(InputStream jsonStream) throws IOException, SchemaValidationException {
+        final JsonNode titanSchema = JsonLoader.fromReader(new InputStreamReader(new BufferedInputStream(jsonStream)));
         final JsonNode titalSchemaDef = JsonLoader.fromResource(SCHEMA_RESOURCE);
 
         final JsonValidator validator = JsonSchemaFactory.newBuilder().freeze().getValidator();
