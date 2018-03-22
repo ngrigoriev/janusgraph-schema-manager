@@ -68,22 +68,22 @@ public class DOTGenerator {
 		}
 
         private void writeGraph(GraphState graphState)  throws IOException {
-            BufferedWriter writer = new BufferedWriter(new FileWriter(outFile));
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(outFile))) {
+                writer.write("graph ");
+                writer.write("GRAPH_" + graphName.replaceAll("[^a-zA-Z0-9_]", "_"));
+                writer.write(" {");
 
-            writer.write("graph ");
-            writer.write("GRAPH_" + graphName.replaceAll("[^a-zA-Z0-9_]", "_"));
-            writer.write(" {");
+                final Set<Triple<String, String, String>> duplicateRelationships = new HashSet<>();
+                final Set<String> mockVertices = new HashSet<>();
 
-            final Set<Triple<String, String, String>> duplicateRelationships = new HashSet<>();
-            final Set<String> mockVertices = new HashSet<>();
+                writeNodes(writer, graphState, duplicateRelationships, mockVertices);
 
-            writeNodes(writer, graphState, duplicateRelationships, mockVertices);
+                writeEdges(writer, graphState, duplicateRelationships, mockVertices);
 
-            writeEdges(writer, graphState, duplicateRelationships, mockVertices);
-
-            writer.write("\n}");
-            writer.flush();
-            writer.close();
+                writer.write("\n}");
+                writer.flush();
+                writer.close();
+            }
         }
 
         public void writeEdges(final Writer writer, final GraphState graphState,
