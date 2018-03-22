@@ -5,7 +5,7 @@ import org.apache.commons.lang.StringUtils;
 import com.google.common.base.Preconditions;
 
 public class ReindexAction {
-	public enum IndexTarget { ALL, NEW, NAMED }
+	public enum IndexTarget { ALL, NEW, NAMED, UNAVAILABLE }
 
 	public enum IndexingMethod { LOCAL, HADOOP, HADOOP2 }
 
