@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/graph-lab/janusgraph-schema-manager.svg?branch=master)](https://travis-ci.org/graph-lab/janusgraph-schema-manager)
+
 # Titan/JanusGraph Schema Manager
 
 
