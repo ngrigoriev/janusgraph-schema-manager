@@ -365,26 +365,28 @@ public class SchemaManager {
 		return index;
 	}
 
-    JanusGraphIndex ensureGraphIndexReady(JanusGraph graph, String graphIndexName) throws SchemaManagementException {
+    void ensureGraphIndexReady(JanusGraph graph, String graphIndexName) throws SchemaManagementException {
 		ensureGraphIndexState(graph, graphIndexName, SchemaStatus.INSTALLED,
 				SchemaAction.REGISTER_INDEX, SchemaStatus.REGISTERED);
-		return ensureGraphIndexState(graph, graphIndexName, SchemaStatus.REGISTERED,
+		ensureGraphIndexState(graph, graphIndexName, SchemaStatus.REGISTERED,
 				SchemaAction.ENABLE_INDEX, SchemaStatus.ENABLED);
 	}
 
-	private JanusGraphIndex ensureGraphIndexState(JanusGraph graph, String graphIndexName,
+	private void ensureGraphIndexState(JanusGraph graph, String graphIndexName,
 			SchemaStatus testState, SchemaAction action, SchemaStatus targetState) throws SchemaManagementException {
 
-		final JanusGraphManagement mgmt = graph.openManagement();
-		JanusGraphIndex dbIndex = mgmt.getGraphIndex(graphIndexName);
+		JanusGraphManagement mgmt = graph.openManagement();
+		final List<String> indexPKNames = Arrays.asList(mgmt.getGraphIndex(graphIndexName).getFieldKeys()).stream().map(PropertyKey::name).collect(Collectors.toList());
+		mgmt.rollback();
 
-		for(final PropertyKey pk: dbIndex.getFieldKeys()) {
-			final SchemaStatus oldState = dbIndex.getIndexStatus(pk);
+		for(final String pkName: indexPKNames) {
+		    mgmt = graph.openManagement();
+			final SchemaStatus oldState = mgmt.getGraphIndex(graphIndexName).getIndexStatus(mgmt.getPropertyKey(pkName));
 			if (oldState == testState) {
-				LOG.warn("Index \"{}\" status is {} for property \"{}\", attempting to {} it...", graphIndexName, pk.name(), testState, action);
+				LOG.warn("Index \"{}\" status is {} for property \"{}\", attempting to {} it...", graphIndexName, pkName, testState, action);
 				try {
 
-					IndexJobFuture future = mgmt.updateIndex(dbIndex, action);
+					IndexJobFuture future = mgmt.updateIndex(mgmt.getGraphIndex(graphIndexName), action);
 					if (future == null) {
 						LOG.error("updateIndex() returned a null future");
 					} else {
@@ -395,23 +397,25 @@ public class SchemaManager {
 						.status(targetState)
 						.timeout(this.reindexTimeoutInSecs, ChronoUnit.SECONDS)
 						.call();
-					final SchemaStatus newState = report.getConvergedKeys().get(pk.name());
+					final SchemaStatus newState = report.getConvergedKeys().get(pkName);
 					if (newState == oldState) {
-						throw new SchemaManagementException("Unable to change index \"" + graphIndexName + "\" state for property \"" + pk.name() +
+						throw new SchemaManagementException("Unable to change index \"" + graphIndexName + "\" state for property \"" + pkName +
 								"\" using action " + action +
 								", index is still in state " + oldState);
 					}
-					LOG.info("Index \"{}\" status report for property \"{}\": {}", graphIndexName, pk.name(), report.toString());
+					LOG.info("Index \"{}\" status report for property \"{}\": {}", graphIndexName, pkName, report.toString());
 				} catch (Exception e) {
 					throw new SchemaManagementException("Unable to change index \"" + graphIndexName
-							+ "\" state for property \"" + pk.name() + "\" using action " + action, e);
+							+ "\" state for property \"" + pkName + "\" using action " + action, e);
+				} finally {
+				    if (mgmt.isOpen()) {
+				        mgmt.rollback();
+				    }
 				}
 			} else {
-				mgmt.rollback();
+		        mgmt.rollback();
 			}
 		}
-
-		return dbIndex;
 	}
 
 	private void verifyExistingGraphElements(JanusGraph graph, GraphState graphState, GraphSchemaDef graphDef)
