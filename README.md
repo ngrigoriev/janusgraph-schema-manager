@@ -190,6 +190,10 @@ bin/schema_manager.sh  -g graph.properties -r UNAVAILABLE -w schema.json
 
 In this case the state of each index defined in the schema will be verified. If an index or any of its properties is in the state REGISTERED or INSTALLED, the tool will re-index the data and enable the index. If the index or any of its components is in DISABLED state, it will be ignored.
 
+# Additional documentation
+
+## [Graph schema visualization with GraphViz](docs/README-graphviz.md)
+
 
 # Plans for future
 - better validation of the schema before applying it and/or reviewing how transactions can be used to avoid partial failures

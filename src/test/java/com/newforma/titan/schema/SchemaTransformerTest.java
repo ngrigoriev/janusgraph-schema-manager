@@ -2,8 +2,6 @@ package com.newforma.titan.schema;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.io.InputStream;
@@ -14,7 +12,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import com.newforma.titan.schema.types.GraphSchemaDef;
@@ -26,13 +23,10 @@ import com.newforma.titan.schema.types.SchemaVertexRelationshipDesc;
 
 public class SchemaTransformerTest {
 
-    @Before
-    public void setUp() {
-    }
+    final SchemaLoader loader = SchemaLoader.getInstance();
 
     @Test
     public void testCascade_REPLACE_IF_EMPTY_empty() throws Exception {
-        SchemaLoader loader = SchemaLoader.getInstance();
         final GraphSchemaDef schema;
         try (InputStream is = getClass().getResourceAsStream("doctag_cascading_test_001.json")) {
             schema = loader.loadFrom(is, "junit.json",
@@ -94,7 +88,6 @@ public class SchemaTransformerTest {
 
     @Test
     public void testCascade_REPLACE_IF_EMPTY_no_parent_doctags() throws Exception {
-        SchemaLoader loader = SchemaLoader.getInstance();
         final GraphSchemaDef schema;
         try (InputStream is = getClass().getResourceAsStream("doctag_cascading_empty_parent_doctags.json")) {
             schema = loader.loadFrom(is, "junit.json",

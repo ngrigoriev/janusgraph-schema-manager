@@ -1,0 +1,260 @@
+{
+        "graph": {
+                "name": "GraphViz test",
+                "model_version": "1.0",
+                "schema_format_version": "1.0",
+                "defaults": {
+                        "vertex_partition": false,
+                        "edge_partition": false,
+                        "consistency_modifier": "DEFAULT"
+                },
+                "documentation": {
+                		"doctag_cascading": "REPLACE_IF_EMPTY"
+                }
+        },
+        "vertices": [
+			{
+				"label": "VertexA",
+				"description": "vertex A",
+				"doctags": "all,vertexa",
+				"properties": [
+					{
+						"key": "property_1a",
+						"description": "test property 1a"
+					},
+					{
+						"key": "property_2a",
+						"description": "test property 2a"
+					}
+				]
+			},
+			{
+				"label": "VertexB",
+				"description": "vertex B",
+				"doctags": "all",
+				"properties": [
+					{
+						"key": "property_1b",
+						"description": "test property 1b"
+					},
+					{
+						"key": "property_2b",
+						"description": "test property 2b"
+					}
+				]
+			},
+			{
+				"label": "VertexD",
+				"description": "vertex D",
+				"doctags": "vertexd",
+				"properties": [
+					{
+						"key": "property_1d",
+						"description": "test property 1d"
+					},
+					{
+						"key": "property_2d",
+						"description": "test property 2d"
+					}
+				],
+				"relationships": [
+					{
+						"direction": "OUT",
+						"vertex": "VertexA",
+						"edge": "EDGE_NON_EXISTING"
+					}
+				]
+			},
+			{
+				"label": "VertexE",
+				"description": "vertex E",
+				"doctags": "vertexe",
+				"properties": [
+					{
+						"key": "property_1e",
+						"description": "test property 1e"
+					},
+					{
+						"key": "property_2e",
+						"description": "test property 2e"
+					}
+				],
+				"relationships": [
+					{
+						"direction": "OUT",
+						"vertex": "VertexF",
+						"edge": "EDGE_NON_EXISTING"
+					}
+				]
+			},
+			{
+				"label": "VertexG",
+				"description": "vertex G",
+				"doctags": "vertexg",
+				"static": true,
+				"properties": [
+					{
+						"key": "property_1g",
+						"description": "test property 1g"
+					},
+					{
+						"key": "property_2g",
+						"description": "test property 2g"
+					}
+				],
+				"relationships": [
+					{
+						"direction": "OUT",
+						"vertex": "VertexA",
+						"edge": "EDGE_GA"
+					}
+				]
+			}
+        ],
+        "edges": [
+			{
+				"label": "EDGE_AB_1",
+				"description": "Test edge 1",
+				"multiplicity": "MULTI",
+				"doctags": "normal_edge",
+				"relationships": [
+					{
+						"description": "A to B",
+						"out": "VertexA",
+						"in": "VertexB"
+					}
+				],
+				"properties": [
+					{
+						"key": "e1",
+						"description": "edge property ab1"
+					}
+				]
+			},
+			{
+				"label": "EDGE_TWO_WAY",
+				"description": "Test edge 2",
+				"multiplicity": "MULTI",
+				"doctags": "two_way_edge",
+				"relationships": [
+					{
+						"description": "A to B",
+						"out": "VertexA",
+						"in": "VertexB"
+					},
+					{
+						"description": "B to A",
+						"out": "VertexB",
+						"in": "VertexA"
+					}
+				]
+			},
+			{
+				"label": "EDGE_1TO1",
+				"description": "Test edge 3",
+				"multiplicity": "ONE2ONE",
+				"doctags": "1to1_edge",
+				"relationships": [
+					{
+						"description": "A to B",
+						"out": "VertexA",
+						"in": "VertexB"
+					}
+				]
+			},
+			{
+				"label": "EDGE_INVISIBLE",
+				"description": "Test edge 4",
+				"doctags": "invisible_edge",
+				"invisible": true,
+				"relationships": [
+					{
+						"description": "A to B",
+						"out": "VertexA",
+						"in": "VertexB"
+					}
+				]
+			},
+			{
+				"label": "EDGE_UNIDIR",
+				"description": "Test edge 5",
+				"doctags": "unidir_edge",
+				"unidirected": true,
+				"relationships": [
+					{
+						"description": "A to B",
+						"out": "VertexA",
+						"in": "VertexB"
+					}
+				]
+			},
+			{
+				"label": "EDGE_UNIDIR_INV",
+				"description": "Test edge 6",
+				"doctags": "unidir_inv_edge",
+				"unidirected": true,
+				"invisible": true,
+				"relationships": [
+					{
+						"description": "A to B",
+						"out": "VertexA",
+						"in": "VertexB"
+					}
+				]
+			},
+			{
+				"label": "EDGE_TO_NONEXISTING_VERTEX",
+				"description": "Test edge 7",
+				"doctags": "nonexist_inv_edge",
+				"relationships": [
+					{
+						"description": "A to C",
+						"out": "VertexA",
+						"in": "VertexC"
+					}
+				]
+			},
+			{
+				"label": "EDGE_GA",
+				"description": "Test edge 8",
+				"doctags": "edgega",
+				"relationships": [
+					{
+						"description": "G to A",
+						"out": "VertexG",
+						"in": "VertexA"
+					}
+				]
+			}
+        ],
+        "properties": [
+			{
+				"key": "property_1a",
+				"cardinality": "SINGLE",
+				"data_type": "java.lang.String",
+				"description": "1a"
+			},
+			{
+				"key": "property_2a",
+				"cardinality": "SINGLE",
+				"data_type": "java.lang.String",
+				"description": "2a"
+			},
+			{
+				"key": "property_1b",
+				"cardinality": "SINGLE",
+				"data_type": "java.lang.String",
+				"description": "1b"
+			},
+			{
+				"key": "property_2b",
+				"cardinality": "SINGLE",
+				"data_type": "java.lang.String",
+				"description": "2b"
+			}
+        ],
+        "graph_indexes": [],
+        "local_property_indexes": [],
+        "local_edge_indexes": [],
+        "includes": []
+}
