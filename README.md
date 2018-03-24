@@ -19,7 +19,8 @@ The tool is written in Java and has not been carefully tested yet. Still, given 
 
 By default the tool is built without the sandbox components (see below).
 
-Run "mvn clean package" to build the schema manager or "mvn -Psandbox clean package" if you want to build the schema manager with sandbox components. The distribution package will be available as target/titan-schema-manager-<Version>-SNAPSHOT-dist[-sandbox].zip
+Run "mvn clean package" to build the schema manager or "mvn -Psandbox clean package" if you want to build the schema manager with sandbox components.
+The distribution package will be available as target/janusgraph-schema-manager-<Version>-SNAPSHOT-dist\[-sandbox].zip
 
 
 # Running the schema manager
@@ -92,7 +93,7 @@ Build & get packages:
 mvn -Psandbox clean package
 ```
 
-Unpack target/titan-schema-manager-<version>-SNAPSHOT-dist-sandbox.zip somewhere.
+Unpack target/janusgraph-schema-manager-<Version>-SNAPSHOT-dist\[-sandbox].zip somewhere.
 
 Start local DynamoDB with the data stored in /tmp/db by running:
 
@@ -124,7 +125,7 @@ All above-mentioned applications use the configuration files from "examples/sand
 Note that the console does not connect anywhere by default. You need to connect to the local Gremlin server first using the following command:
 
 ```
-:remote connect tinkerpop.server ./titan-schema-manager-1.0-SNAPSHOT/examples/sandbox/gremlin/gremlin-localhost.yaml
+:remote connect tinkerpop.server ./examples/sandbox/gremlin/gremlin-localhost.yaml
 ```
 
 To test that everything is working you can run this command in Gremlin console:
