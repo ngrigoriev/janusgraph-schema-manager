@@ -375,24 +375,28 @@ public class SchemaManager {
 	private void ensureGraphIndexState(JanusGraph graph, String graphIndexName,
 			SchemaStatus testState, SchemaAction action, SchemaStatus targetState) throws SchemaManagementException {
 
-		JanusGraphManagement mgmt = graph.openManagement();
-		final List<String> indexPKNames = Arrays.asList(mgmt.getGraphIndex(graphIndexName).getFieldKeys()).stream().map(PropertyKey::name).collect(Collectors.toList());
-		mgmt.rollback();
+	    final List<String> indexPKNames;
+	    final JanusGraphManagement graphMgmt = graph.openManagement();
+	    try {
+	        indexPKNames = Arrays.asList(graphMgmt.getGraphIndex(graphIndexName).getFieldKeys()).stream().map(PropertyKey::name).collect(Collectors.toList());
+	    } finally {
+	        graphMgmt.rollback();
+	    }
 
 		for(final String pkName: indexPKNames) {
-		    mgmt = graph.openManagement();
-			final SchemaStatus oldState = mgmt.getGraphIndex(graphIndexName).getIndexStatus(mgmt.getPropertyKey(pkName));
-			if (oldState == testState) {
-				LOG.warn("Index \"{}\" status is {} for property \"{}\", attempting to {} it...", graphIndexName, pkName, testState, action);
-				try {
+		    final JanusGraphManagement pkMgmt = graph.openManagement();
+			final SchemaStatus oldState = pkMgmt.getGraphIndex(graphIndexName).getIndexStatus(pkMgmt.getPropertyKey(pkName));
+			try {
+    			if (oldState == testState) {
+    				LOG.warn("Index \"{}\" status is {} for property \"{}\", attempting to {} it...", graphIndexName, pkName, testState, action);
 
-					IndexJobFuture future = mgmt.updateIndex(mgmt.getGraphIndex(graphIndexName), action);
+					IndexJobFuture future = pkMgmt.updateIndex(pkMgmt.getGraphIndex(graphIndexName), action);
 					if (future == null) {
 						LOG.error("updateIndex() returned a null future");
 					} else {
 						future.get();	// may be useless as they are sometimes empty ones
 					}
-					mgmt.commit();
+					pkMgmt.commit();
 					final GraphIndexStatusReport report = ManagementSystem.awaitGraphIndexStatus(graph, graphIndexName)
 						.status(targetState)
 						.timeout(this.reindexTimeoutInSecs, ChronoUnit.SECONDS)
@@ -404,16 +408,16 @@ public class SchemaManager {
 								", index is still in state " + oldState);
 					}
 					LOG.info("Index \"{}\" status report for property \"{}\": {}", graphIndexName, pkName, report.toString());
-				} catch (Exception e) {
-					throw new SchemaManagementException("Unable to change index \"" + graphIndexName
-							+ "\" state for property \"" + pkName + "\" using action " + action, e);
-				} finally {
-				    if (mgmt.isOpen()) {
-				        mgmt.rollback();
-				    }
-				}
-			} else {
-		        mgmt.rollback();
+    			} else {
+    			    pkMgmt.rollback();
+    			}
+			} catch (Exception e) {
+                 throw new SchemaManagementException("Unable to change index \"" + graphIndexName
+                         + "\" state for property \"" + pkName + "\" using action " + action, e);
+			} finally {
+                if (pkMgmt.isOpen()) {
+                    pkMgmt.rollback();
+                }
 			}
 		}
 	}
