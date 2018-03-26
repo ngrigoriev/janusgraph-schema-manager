@@ -3,10 +3,9 @@ package com.newforma.titan.utils;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.io.Reader;
-import java.io.Writer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import javax.script.Bindings;
@@ -31,9 +30,10 @@ import org.janusgraph.core.JanusGraph;
 import org.janusgraph.core.JanusGraphFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import groovy.json.JsonBuilder;
 
 import com.google.common.collect.ImmutableMap;
+
+import groovy.json.JsonBuilder;
 
 public class ScriptRunnerApp {
     private static final String OPTION_GRAPH_CONFIG = "g";
@@ -63,7 +63,7 @@ public class ScriptRunnerApp {
         final String graphConfigFile = cmdLine.getOptionValue(OPTION_GRAPH_CONFIG);
 
         try {
-            runScripts(graphConfigFile, remainingArgs);
+            new ScriptRunnerApp().runScripts(graphConfigFile, remainingArgs);
         } catch (final Throwable t) {
             LOG.error("Execution failed", t);
             System.exit(1);
@@ -72,7 +72,15 @@ public class ScriptRunnerApp {
         System.exit(0);
     }
 
-    private static void runScripts(String graphConfigFileName, String[] scriptFileNames) throws IOException {
+    /**
+     * Executes the collection of Groovy scripts.
+     *
+     * @param graphConfigFileName Graph configuration file
+     * @param scriptFileNames script file names - absolute or relative to the current working directory
+     * @return list of JSON-serialized return values for each corresponding script
+     * @throws IOException in case of any I/O error
+     */
+    public List<String> runScripts(String graphConfigFileName, String[] scriptFileNames) throws IOException, ScriptException {
 
         final GremlinGroovyScriptEngineFactory factory = new GremlinGroovyScriptEngineFactory();
         final GremlinScriptEngineManager scriptEngineManager = new DefaultGremlinScriptEngineManager();
@@ -89,6 +97,8 @@ public class ScriptRunnerApp {
         } catch (ConfigurationException e) {
             throw new IOException("Failed to load graph configuration from " + graphConfigFileName, e);
         }
+
+        final List<String> results = new ArrayList<>(scriptFileNames.length);
 
         try (final JanusGraph graph = JanusGraphFactory.open(graphConfig)) {
 
@@ -115,23 +125,23 @@ public class ScriptRunnerApp {
                         if (result != null) {
                             jsonResult = new JsonBuilder(result).toPrettyString();
                         } else {
-                            jsonResult = "NULL";
+                            jsonResult = "{}";
                         }
+
+                        results.add(jsonResult);
 
                         LOG.info("Script {} returned \"{}\"", scriptFile, jsonResult);
                         graph.tx().commit();
                     } else {
                         throw new IOException("Failed to compile script " + scriptFile);
                     }
-                } catch (final ScriptException se) {
-                    throw new IOException("Failed to execute script " + scriptFile, se);
-                } catch (final Throwable t) {
-                    throw new IOException("Internal error when running " + scriptFile, t);
                 }
             }
         }
 
         LOG.info("Executed {} script(s)", scriptFileNames.length);
+
+        return results;
     }
 
     private static Options populateOptions() {
