@@ -191,6 +191,17 @@ bin/schema_manager.sh  -g graph.properties -r UNAVAILABLE -w schema.json
 
 In this case the state of each index defined in the schema will be verified. If an index or any of its properties is in the state REGISTERED or INSTALLED, the tool will re-index the data and enable the index. If the index or any of its components is in DISABLED state, it will be ignored.
 
+## Running a Gremlin/Groovy script without the console
+
+You can run one or more Gremlin/Groovy scripts directly using a simple script runner. 
+
+```
+bin/run_script -g graph.properties script1.groovy script2.groovy ...
+```
+
+It stops on the first failure and the exit status is set to 1 in case of an error.
+
+
 # Additional documentation
 
 ## [Graph schema visualization with GraphViz](docs/README-graphviz.md)
