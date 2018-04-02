@@ -252,7 +252,6 @@ public class GraphInstanceTool {
             }
         }
 
-        @Override
         public void updateState() {
             LOG.debug("updateState() called");
         }
