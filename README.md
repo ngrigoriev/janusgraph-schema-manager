@@ -48,6 +48,9 @@ bin/schema_manager.sh  -g graph.properties -l data-graphml.xml schema.json
 
 Please refer to src/main/resources/schema/graph-schema-def-1.0.json for details. examples/sandbox/graph-of-gods/graph-of-the-gods-v1.0.json contains a working example of the famous Graph Of The Gods.
 
+You can browser the schema definition using [Docson](https://github.com/lbovet/docson) by clicking [here](http://lbovet.github.io/docson/index.html#https://raw.githubusercontent.com/graph-lab/janusgraph-schema-manager/master/src/main/resources/schema/graph-schema-def-1.0.json) (current schema version from the master branch).
+
+
 ## Schema tagging
 
 "doctags" property may be used for properties, edges, vertexes and indexes, as well as on the nested property and relationship descriptions. This property contains list of comma-separated tags to be applied to the element. The tags can be automatically cascaded in different ways to the nested elements (e.g. from the vertex to the declared properties and relationships). The cascading is controlled by "doctag_cascading" property of the schema. Note that this setting and cascading itself is done only in the current schema file, e.g. it is not extended to other files if the include mechanism is used.
