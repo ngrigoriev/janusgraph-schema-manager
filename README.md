@@ -208,6 +208,7 @@ It stops on the first failure and the exit status is set to 1 in case of an erro
 # Additional documentation
 
 ## [Graph schema visualization with GraphViz](docs/README-graphviz.md)
+## [Graph maintenance tools](docs/README-graph-maintenance.md)
 
 
 # Plans for future

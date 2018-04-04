@@ -18,6 +18,7 @@
 			<include>schema_manager.bat</include>
 			<include>schema_manager.sh</include>
 			<include>run_script.sh</include>
+			<include>instance_tool.sh</include>
 			<include>log4j-console.properties</include>
 		</includes>
 		<fileMode>0755</fileMode>
@@ -42,6 +43,13 @@
 		<includes>
 			<include>graph-config/dynamodb-remote.properties</include>
 		</includes>
+		<fileMode>0755</fileMode>
+	</fileSet>
+	<fileSet>
+		<directory>docs</directory>
+		<excludes>
+			<exclude>*.sh</exclude>
+		</excludes>
 		<fileMode>0755</fileMode>
 	</fileSet>
 	<fileSet>
