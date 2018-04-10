@@ -937,18 +937,20 @@ public class SchemaManager {
 						.timeout(this.reindexTimeoutInSecs, ChronoUnit.SECONDS)
 						.call();
 
-				if (indexStatusReport.getSucceeded()) {
-    				LOG.info("Enabling local property index {}...", indexName);
-    				final JanusGraphManagement mgmtIndexEnabler = graph.openManagement();
-    				mgmtIndexEnabler.updateIndex(mgmtIndexEnabler.getRelationIndex(pk, indexName), SchemaAction.ENABLE_INDEX).get();
-    				mgmtIndexEnabler.commit();
-    				LOG.info("Local property index {} is enabled, existing data may need to be reindexed", indexName);
+                if (indexStatusReport.getSucceeded()) {
+                    LOG.info("Enabling local property index {}...", indexName);
+                    final JanusGraphManagement mgmtIndexEnabler = graph.openManagement();
+                    mgmtIndexEnabler
+                            .updateIndex(mgmtIndexEnabler.getRelationIndex(pk, indexName), SchemaAction.ENABLE_INDEX)
+                            .get();
+                    mgmtIndexEnabler.commit();
+                    LOG.info("Local property index {} is enabled, existing data may need to be reindexed", indexName);
 
-    				graphState.addIndex(indexName, true);
-				} else {
-                    throw new SchemaManagementException("Unable to register new local property index \"" + indexName + "\" after " +
-                            indexStatusReport.getElapsed().getSeconds() + "s");
-				}
+                    graphState.addIndex(indexName, true);
+                } else {
+                    throw new SchemaManagementException("Unable to register new local property index \"" + indexName
+                            + "\" after " + indexStatusReport.getElapsed().getSeconds() + "s");
+                }
 			} catch (InterruptedException e) {
 				throw new SchemaManagementException("Unable to get status for index \"" + indexName + "\"", e);
 			} catch (ExecutionException e) {
@@ -991,14 +993,14 @@ public class SchemaManager {
 						.timeout(this.reindexTimeoutInSecs, ChronoUnit.SECONDS)
 						.call();
 
-				if (indexStatusReport.getSucceeded()) {
-    				LOG.info("Enabling local edge index {}...", indexName);
-    				final JanusGraphManagement mgmtIndexEnabler = graph.openManagement();
-    				mgmtIndexEnabler.updateIndex(mgmtIndexEnabler.getRelationIndex(el, indexName), SchemaAction.ENABLE_INDEX).get();
-    				mgmtIndexEnabler.commit();
-    				LOG.info("Local edge index {} is enabled, existing data may need to be reindexed", indexName);
+                if (indexStatusReport.getSucceeded()) {
+                	LOG.info("Enabling local edge index {}...", indexName);
+                	final JanusGraphManagement mgmtIndexEnabler = graph.openManagement();
+                	mgmtIndexEnabler.updateIndex(mgmtIndexEnabler.getRelationIndex(el, indexName), SchemaAction.ENABLE_INDEX).get();
+                	mgmtIndexEnabler.commit();
+                	LOG.info("Local edge index {} is enabled, existing data may need to be reindexed", indexName);
 
-    				graphState.addIndex(indexName, true);
+                	graphState.addIndex(indexName, true);
                 } else {
                     throw new SchemaManagementException("Unable to register new local edge index \"" + indexName + "\" after " +
                             indexStatusReport.getElapsed().getSeconds() + "s");
